@@ -3,106 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transforme Seu Negócio - Landing Page</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Aptus - Rede Social para Emagrecimento Saudavel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/estilo.css">
 </head>
-<body class="font-sans antialiased text-gray-800">
-
-  <!-- Navbar fixa -->
-  <header class="fixed top-0 left-0 w-full bg-white/90 backdrop-blur z-50 border-b border-gray-100">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <span class="text-xl font-bold text-indigo-600">MinhaMarca</span>
-      <a href="#formulario" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-indigo-700 transition">Quero saber mais</a>
-    </div>
-  </header>
-
-  <!-- Espaçamento do navbar fixo -->
-  <div class="h-16"></div>
-
-  <main>
-
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-20 px-4">
-      <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
-        <div class="flex-1 text-center md:text-left">
-          <h1 class="text-4xl md:text-5xl font-extrabold leading-tight text-gray-900">
-            A solução que seu negócio <span class="text-indigo-600">precisava</span>
-          </h1>
-          <p class="mt-4 text-lg text-gray-600 max-w-lg">
-            Transforme leads em clientes com nossa plataforma inteligente. Simples, rápido e eficiente.
-          </p>
-          <a href="#formulario" class="mt-6 inline-block bg-indigo-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-indigo-700 transition shadow-lg">Solicitar contato</a>
-        </div>
-        <div class="flex-1">
-          <img src="https://placehold.co/600x400/indigo/white?text=Sua+Imagem" alt="Ilustração do produto" class="w-full max-w-md mx-auto rounded-2xl shadow-xl">
-        </div>
-      </div>
-    </section>
-
-    <!-- Benefícios -->
-    <section class="py-16 px-4 bg-white">
-      <div class="max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Por que escolher nossa solução?</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="text-center p-6 rounded-xl bg-indigo-50 hover:shadow-md transition">
-            <div class="text-4xl mb-4">⚡</div>
-            <h3 class="text-xl font-semibold">Rápido</h3>
-            <p class="mt-2 text-gray-600">Resultados em tempo real com nossa infraestrutura otimizada.</p>
-          </div>
-          <div class="text-center p-6 rounded-xl bg-indigo-50 hover:shadow-md transition">
-            <div class="text-4xl mb-4">🔒</div>
-            <h3 class="text-xl font-semibold">Seguro</h3>
-            <p class="mt-2 text-gray-600">Seus dados protegidos com criptografia de ponta a ponta.</p>
-          </div>
-          <div class="text-center p-6 rounded-xl bg-indigo-50 hover:shadow-md transition">
-            <div class="text-4xl mb-4">📱</div>
-            <h3 class="text-xl font-semibold">Responsivo</h3>
-            <p class="mt-2 text-gray-600">Funciona perfeitamente em qualquer dispositivo.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Formulário de Captura -->
-    <section id="formulario" class="py-16 px-4 bg-gray-50">
-      <div class="max-w-xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Fale conosco</h2>
-        <p class="text-center text-gray-600 mb-8">Preencha o formulário e entraremos em contato.</p>
-        <form id="formLead" class="bg-white p-8 rounded-2xl shadow-lg space-y-5" novalidate>
-          <div>
-            <label for="nome_completo" class="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>
-            <input type="text" id="nome_completo" name="nome_completo" required minlength="3" maxlength="150" placeholder="Seu nome completo" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
-          </div>
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-            <input type="email" id="email" name="email" required placeholder="seu@email.com" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
-          </div>
-          <div>
-            <label for="telefone_whatsapp" class="block text-sm font-medium text-gray-700 mb-1">Telefone (WhatsApp)</label>
-            <input type="tel" id="telefone_whatsapp" name="telefone_whatsapp" required placeholder="(11) 99999-8888" maxlength="15" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
-          </div>
-          <div>
-            <label for="mensagem" class="block text-sm font-medium text-gray-700 mb-1">Mensagem (opcional)</label>
-            <textarea id="mensagem" name="mensagem" rows="3" maxlength="500" placeholder="Sua mensagem..." class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"></textarea>
-          </div>
-          <button type="submit" id="btnEnviar" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-            <span id="textoBtn">Enviar mensagem</span>
-            <span id="spinnerBtn" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          </button>
-        </form>
-        <!-- Toast de feedback -->
-        <div id="toast" class="fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold hidden transition-all duration-300 z-50"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-gray-400 text-center py-8 px-4">
-    <p class="text-sm">&copy; 2026 MinhaMarca. Todos os direitos reservados.</p>
-  </footer>
-
+<body>
+  <div id="app"></div>
+  <div id="toast-container"></div>
+  <div id="modal-container"></div>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/componentes/toast.js"></script>
+  <script src="js/componentes/modal.js"></script>
+  <script src="js/componentes/navbar.js"></script>
+  <script src="js/componentes/cardPost.js"></script>
+  <script src="js/componentes/cardRefeicao.js"></script>
+  <script src="js/paginas/onboarding.js"></script>
+  <script src="js/paginas/login.js"></script>
+  <script src="js/paginas/cadastro.js"></script>
+  <script src="js/paginas/perfilBasico.js"></script>
+  <script src="js/paginas/home.js"></script>
+  <script src="js/paginas/planoAlimentar.js"></script>
+  <script src="js/paginas/detalhePlano.js"></script>
+  <script src="js/paginas/feed.js"></script>
+  <script src="js/paginas/criarPost.js"></script>
+  <script src="js/paginas/perfil.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
