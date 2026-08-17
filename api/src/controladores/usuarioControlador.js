@@ -2,6 +2,7 @@ const banco = require('../config/conexaoBanco')
 const bcrypt = require('bcryptjs')
 const { validarCadastro, validarLogin, validarPerfil } = require('../utilitarios/validadores')
 const { gerarToken } = require('../middlewares/autenticacao')
+const { atribuirPontos } = require('./pontosControlador')
 
 function cadastrar(req, res) {
   const { valido, erros, dados } = validarCadastro(req.body)
@@ -13,6 +14,8 @@ function cadastrar(req, res) {
   const hash = bcrypt.hashSync(dados.senha, 10)
   const inserir = banco.prepare('INSERT INTO usuarios (nome_completo, email, senha) VALUES (?, ?, ?)')
   const resultado = inserir.run(dados.nome_completo, dados.email, hash)
+
+  atribuirPontos(resultado.lastInsertRowid, 10, 'perfil_criado')
 
   const token = gerarToken({ id: resultado.lastInsertRowid, email: dados.email })
 

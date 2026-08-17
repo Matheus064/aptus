@@ -13,7 +13,7 @@ function renderCadastro() {
             </svg>
           </div>
           <h1 class="auth-title">Criar conta</h1>
-          <p class="auth-subtitle">Comece sua jornada de bem-estar</p>
+          <p class="auth-subtitle">Comece sua jornada de bem-estar </p>
         </div>
         <form id="formCadastro" style="display:flex;flex-direction:column;gap:16px;">
           <div class="campo">

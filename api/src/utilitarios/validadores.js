@@ -147,6 +147,35 @@ function validarComentario(dados) {
   }
 }
 
+function validarMensagem(dados) {
+  const erros = []
+  const conteudo = sanitizar(dados.conteudo)
+
+  if (!conteudo || conteudo.length < 1 || conteudo.length > 2000)
+    erros.push('Mensagem deve ter entre 1 e 2000 caracteres.')
+
+  return {
+    valido: erros.length === 0,
+    erros,
+    dados: { conteudo, destino_id: dados.destino_id || null }
+  }
+}
+
+function validarGrupo(dados) {
+  const erros = []
+  const nome = sanitizar(dados.nome)
+  const descricao = dados.descricao ? sanitizar(dados.descricao) : ''
+
+  if (!nome || nome.length < 3 || nome.length > 100)
+    erros.push('Nome do grupo deve ter entre 3 e 100 caracteres.')
+
+  return {
+    valido: erros.length === 0,
+    erros,
+    dados: { nome, descricao: descricao || null }
+  }
+}
+
 module.exports = {
   sanitizar,
   validarCadastro,
@@ -155,5 +184,7 @@ module.exports = {
   validarPost,
   validarPlano,
   validarRefeicao,
-  validarComentario
+  validarComentario,
+  validarMensagem,
+  validarGrupo
 }

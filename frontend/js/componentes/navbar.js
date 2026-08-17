@@ -1,6 +1,9 @@
 function renderNavbar(paginaAtual = '') {
   if (!Auth.usuarioLogado()) return ''
 
+  const usuario = Auth.obterUsuario()
+  const avisoChat = (usuario?.avisos_chat || 0) > 0
+
   return `
     <nav class="navbar">
       <a href="#/home" class="navbar-item ${paginaAtual === 'home' ? 'ativo' : ''}">
@@ -24,6 +27,21 @@ function renderNavbar(paginaAtual = '') {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
         <span>Feed</span>
+      </a>
+      <a href="#/chat" class="navbar-item ${paginaAtual === 'chat' ? 'ativo' : ''}" style="position:relative;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 2 17.5V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v13.5a2.5 2.5 0 0 1-2.5 2.5H9.5L5.5 23v-4H4z"/>
+        </svg>
+        <span>Chat</span>
+        ${avisoChat ? `<span class="navbar-badge" style="position:absolute;top:2px;right:18px;width:8px;height:8px;border-radius:50%;background:var(--info);border:2px solid rgba(255,255,255,0.85);"></span>` : ''}
+      </a>
+      <a href="#/medalhas" class="navbar-item ${paginaAtual === 'medalhas' ? 'ativo' : ''}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>Medalhas</span>
       </a>
       <a href="#/perfil" class="navbar-item ${paginaAtual === 'perfil' ? 'ativo' : ''}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -8,6 +8,8 @@ const rotasUsuarios = require('./rotas/usuarioRotas')
 const rotasPosts = require('./rotas/postRotas')
 const rotasPlanos = require('./rotas/planoRotas')
 const rotasComentarios = require('./rotas/comentarioRotas')
+const rotasChat = require('./rotas/chatRotas')
+const rotasPontos = require('./rotas/pontosRotas')
 
 const app = express()
 
@@ -22,6 +24,8 @@ app.use('/api', rotasUsuarios)
 app.use('/api', rotasPosts)
 app.use('/api', rotasPlanos)
 app.use('/api', rotasComentarios)
+app.use('/api', rotasChat)
+app.use('/api', rotasPontos)
 
 app.get('/api/health', (_, res) => res.json({ sucesso: true, mensagem: 'API funcionando!' }))
 

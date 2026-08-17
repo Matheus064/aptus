@@ -1,5 +1,6 @@
 const banco = require('../config/conexaoBanco')
 const { validarPost } = require('../utilitarios/validadores')
+const { atribuirPontos } = require('./pontosControlador')
 
 function criarPost(req, res) {
   const { valido, erros, dados } = validarPost(req.body)
@@ -7,6 +8,8 @@ function criarPost(req, res) {
 
   const inserir = banco.prepare('INSERT INTO posts (usuario_id, conteudo, tipo) VALUES (?, ?, ?)')
   const resultado = inserir.run(req.usuario.id, dados.conteudo, dados.tipo)
+
+  atribuirPontos(req.usuario.id, 20, 'post_criado')
 
   res.status(201).json({
     sucesso: true,

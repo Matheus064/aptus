@@ -855,3 +855,49 @@ a.card:hover {
   color: var(--cinza-400);
   font-weight: 500;
 }
+
+.chat-conversa-item {
+  transition: all 0.2s ease;
+}
+
+.chat-conversa-item:hover {
+  background: var(--verde-bg) !important;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.chat-mensagens {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.medalhas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.navbar-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--info);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 767px) {
+  .chat-mensagens {
+    height: 360px !important;
+  }
+}

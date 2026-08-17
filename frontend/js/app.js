@@ -8,7 +8,9 @@ const Rotas = {
   '#/planos/': { render: renderDetalhePlano, auth: true },
   '#/feed': { render: renderFeed, auth: true },
   '#/criar-post': { render: renderCriarPost, auth: true },
-  '#/perfil': { render: renderPerfil, auth: true }
+  '#/perfil': { render: renderPerfil, auth: true },
+  '#/chat': { render: renderChat, auth: true },
+  '#/medalhas': { render: renderMedalhas, auth: true }
 }
 
 function roteador() {
@@ -36,6 +38,10 @@ function roteador() {
   }
 
   rota.render()
+
+  if (hash === '#/chat' && Auth.usuarioLogado()) {
+    setTimeout(() => carregarChat(), 100)
+  }
 }
 
 window.addEventListener('hashchange', roteador)

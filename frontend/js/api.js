@@ -82,5 +82,57 @@ const Api = {
 
   async adicionarRefeicao(planoId, dados) {
     return this.requisicao('POST', `/planos/${planoId}/refeicoes`, dados)
+  },
+
+  async listarConversas() {
+    return this.requisicao('GET', '/chat/conversas')
+  },
+
+  async buscarUsuarios(termo) {
+    return this.requisicao('GET', `/chat/usuarios?termo=${encodeURIComponent(termo)}`)
+  },
+
+  async obterConversa(destinatarioId) {
+    return this.requisicao('GET', `/chat/conversas/${destinatarioId}`)
+  },
+
+  async enviarMensagem(destinatarioId, dados) {
+    return this.requisicao('POST', `/chat/conversas/${destinatarioId}/mensagens`, dados)
+  },
+
+  async listarGrupos() {
+    return this.requisicao('GET', '/chat/grupos')
+  },
+
+  async listarGruposDisponiveis() {
+    return this.requisicao('GET', '/chat/grupos/disponiveis')
+  },
+
+  async criarGrupo(dados) {
+    return this.requisicao('POST', '/chat/grupos', dados)
+  },
+
+  async obterGrupo(grupoId) {
+    return this.requisicao('GET', `/chat/grupos/${grupoId}`)
+  },
+
+  async enviarMensagemGrupo(grupoId, dados) {
+    return this.requisicao('POST', `/chat/grupos/${grupoId}/mensagens`, dados)
+  },
+
+  async entrarGrupo(grupoId) {
+    return this.requisicao('POST', `/chat/grupos/${grupoId}/entrar`)
+  },
+
+  async obterPontuacao() {
+    return this.requisicao('GET', '/pontos')
+  },
+
+  async listarMedalhas() {
+    return this.requisicao('GET', '/medalhas')
+  },
+
+  async obterRanking() {
+    return this.requisicao('GET', '/ranking')
   }
 }
