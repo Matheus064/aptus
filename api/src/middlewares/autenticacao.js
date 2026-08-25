@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-require('dotenv').config()
+require('dotenv')
 
 const CHAVE_SECRET = process.env.JWT_SECRET || 'aptus_chave_secreta_2026'
 
@@ -25,4 +25,25 @@ function gerarToken(dados) {
   return jwt.sign(dados, CHAVE_SECRET, { expiresIn: '7d' })
 }
 
-module.exports = { autenticar, gerarToken }
+function autenticarRole(...rolesPermitidos) {
+  return (req, res, next) => {
+    if (!req.usuario || !req.usuario.role) {
+      return res.status(401).json({ sucesso: false, mensagem: 'Acesso negado. Token inválido.' })
+    }
+
+    const roleUsuario = req.usuario.role
+    const temPermissao = rolesPermitidos.some((role) => role === roleUsuario)
+
+    if (!temPermissao) {
+      const rolesFormatados = rolesPermitidos.join(', ')
+      return res.status(403).json({
+        sucesso: false,
+        mensagem: `Acesso negado. Este recurso requer perfil: ${rolesFormatados}.`,
+      })
+    }
+
+    next()
+  }
+}
+
+module.exports = { autenticar, gerarToken, autenticarRole, autorizacao: autenticarRole }
