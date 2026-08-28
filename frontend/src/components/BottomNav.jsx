@@ -1,0 +1,1 @@
+export default function BottomNav({ ativa = 'feed', onChange }) { return <nav className="bottom-nav" aria-label="Navegação principal">{[['feed','Feed'],['discover','Descobrir'],['posts','Posts'],['mensagens','Mensagens'],['perfil','Perfil']].map(([id,label]) => <button key={id} className={ativa === id ? 'active' : ''} onClick={() => onChange?.(id)}>{label}</button>)}</nav>; }

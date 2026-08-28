@@ -1,0 +1,6 @@
+const feed = require('../servicos/feedServico');
+async function obter(req, res, next) { try { return res.json({ sucesso: true, ...(await feed.obterFeedInfinito(req.usuario.sub, req.query.page, req.query.limit || req.query.limite)) }); } catch (e) { return next(e); } }
+async function trending(req, res, next) { try { return res.json(await feed.obterTrending(req.query.tipo, req.query.periodo, req.usuario.sub)); } catch (e) { return next(e); } }
+async function salvar(req, res, next) { try { return res.json(await feed.salvar(req.usuario.sub, req.params.tipo, req.params.id, req.method === 'POST')); } catch (e) { return next(e); } }
+async function salvos(req, res, next) { try { const tabela=req.params.tipo==='receitas'?'usuarios_salvam_receitas':'usuarios_salvam_exercicios'; const coluna=req.params.tipo==='receitas'?'receita_id':'exercicio_id'; const entidade=req.params.tipo==='receitas'?'receitas':'exercicios'; const itens=await feed.listar(`SELECT e.* FROM ${tabela} s JOIN ${entidade} e ON e.id=s.${coluna} WHERE s.usuario_id=? AND e.ativo=1 ORDER BY s.data_salva DESC LIMIT 30`,[req.usuario.sub]); return res.json(itens); } catch(e) { return next(e); } }
+module.exports = { obter, infinito: obter, trending, salvar, salvos };

@@ -1,0 +1,2 @@
+const router=require('express').Router(); const auth=require('../middleware/autenticacao'); const ctrl=require('../controladores/mensagensCtrl');
+router.use(auth); router.get('/conversas',ctrl.conversas); router.post('/',ctrl.enviar); router.get('/conversa/:usuarioId',ctrl.conversa); router.post('/grupos',ctrl.criarGrupo); router.post('/grupos/:id/entrar',ctrl.entrarGrupo); router.get('/grupos/:id/mensagens',ctrl.mensagensGrupo); router.post('/grupos/:id/mensagens',ctrl.enviarGrupo); module.exports=router;

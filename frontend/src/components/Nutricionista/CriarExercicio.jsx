@@ -1,0 +1,4 @@
+import { useState } from 'react';
+import { requisicao } from '../../api';
+
+export default function CriarExercicio({ token, aoCriar }) { const [dados, setDados] = useState({ nome: '', descricao: '', tecnica: '', dificuldade: 3 }); const alterar = e => setDados({ ...dados, [e.target.name]: e.target.value }); const enviar = async e => { e.preventDefault(); aoCriar?.(await requisicao('/exercicios', { method: 'POST', token, body: dados })); }; return <form onSubmit={enviar} className="card"><h2>Novo exercício</h2><label>Nome<input name="nome" required value={dados.nome} onChange={alterar} /></label><label>Descrição<textarea name="descricao" required value={dados.descricao} onChange={alterar} /></label><label>Técnica<textarea name="tecnica" required value={dados.tecnica} onChange={alterar} /></label><label>Dificuldade<input name="dificuldade" type="number" min="1" max="5" value={dados.dificuldade} onChange={alterar} /></label><button>Publicar exercício</button></form>; }

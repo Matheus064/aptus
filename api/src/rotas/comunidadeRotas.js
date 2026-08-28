@@ -1,0 +1,1 @@
+const router=require('express').Router(); const auth=require('../middleware/autenticacao'); const ctrl=require('../controladores/comunidadeCtrl'); router.post('/reportes',auth,ctrl.denunciar); module.exports=router;

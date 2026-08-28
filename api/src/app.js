@@ -1,0 +1,13 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const path = require('node:path');
+const tratadorErros = require('./middleware/tratadorErros');
+const app = express();
+app.use(helmet()); app.use(cors({ origin: process.env.FRONTEND_URL || true })); app.use(express.json({ limit: '2mb' }));
+app.use('/uploads', express.static(path.resolve('uploads')));
+app.get('/health', (req, res) => res.json({ status: 'ok', servico: 'aptus-api' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', servico: 'aptus-api' }));
+app.use('/api/auth', require('./rotas/authRotas')); app.use('/api/usuarios', require('./rotas/usuariosRotas')); app.use('/api/receitas', require('./rotas/receitasRotas')); app.use('/api/exercicios', require('./rotas/exerciciosRotas')); app.use('/api/planos', require('./rotas/planosRotas')); app.use('/api/comentarios', require('./rotas/comentariosRotas')); app.use('/api/discover', require('./rotas/discoverRotas')); app.use('/api/feed', require('./rotas/feedRotas')); app.use('/api/admin', require('./rotas/adminRotas')); app.use('/api/mensagens',require('./rotas/mensagensRotas')); app.use('/api/notificacoes',require('./rotas/notificacoesRotas')); app.use('/api/comunidade',require('./rotas/comunidadeRotas'));
+app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' })); app.use(tratadorErros);
+module.exports = app;

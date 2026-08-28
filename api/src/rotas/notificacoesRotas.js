@@ -1,0 +1,1 @@
+const router=require('express').Router(); const auth=require('../middleware/autenticacao'); const ctrl=require('../controladores/comunidadeCtrl'); router.get('/',auth,ctrl.notificacoes); router.put('/:id/lida',auth,ctrl.lerNotificacao); module.exports=router;
