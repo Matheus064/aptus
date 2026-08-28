@@ -3,6 +3,7 @@ const { gerarToken } = require('../config/auth');
 const { criarHash, compararHash } = require('../utilitarios/hash');
 const { rolesPublicas, emailValido, senhaValida, textoObrigatorio } = require('../utilitarios/validadores');
 const seguro = ({ senha, ...usuario }) => usuario;
+const { gerarToken: gerarTokenConvidado } = require('../config/auth');
 
 async function registro(req, res, next) {
   try {
@@ -16,12 +17,16 @@ async function registro(req, res, next) {
 }
 async function login(req, res, next) {
   try {
-    const { email, senha } = req.body;
+    const { email, senha, role } = req.body;
     const usuario = email && await buscar('SELECT * FROM usuarios WHERE email = ?', [email.trim().toLowerCase()]);
     if (!usuario || !await compararHash(senha || '', usuario.senha)) return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
+    if (role && usuario.role !== role) return res.status(403).json({ erro: 'Este acesso não corresponde ao papel selecionado.' });
     if (!usuario.ativo || usuario.bloqueado) return res.status(403).json({ erro: 'Esta conta não está disponível.' });
     return res.json({ usuario: seguro(usuario), token: gerarToken(usuario) });
   } catch (erro) { return next(erro); }
+}
+async function convidado(req, res) {
+  return res.json({ token: gerarTokenConvidado({ id: 'guest', role: 'guest' }), usuario: { id: 'guest', nome_completo: 'Convidado', role: 'guest' } });
 }
 async function verificarNutricionista(req, res, next) {
   try {
@@ -33,4 +38,4 @@ async function verificarNutricionista(req, res, next) {
     return res.json({ sucesso: true, mensagem: 'Dados enviados para verificação.' });
   } catch (erro) { return next(erro); }
 }
-module.exports = { registro, login, verificarNutricionista, seguro };
+module.exports = { registro, login, convidado, verificarNutricionista, seguro };

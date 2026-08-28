@@ -119,6 +119,20 @@ const inicializarBanco = async () => {
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (exercicio_id) REFERENCES exercicios(id) ON DELETE CASCADE
   )`);
+  await executar(`CREATE TABLE IF NOT EXISTS usuarios_pontos (
+    usuario_id INTEGER PRIMARY KEY, pontos INTEGER DEFAULT 0,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS acoes_pontuadas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, acao TEXT NOT NULL,
+    referencia_id INTEGER, data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(usuario_id, acao, referencia_id), FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS usuarios_medalhas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, medalha TEXT NOT NULL,
+    data_conquista TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(usuario_id, medalha),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
   await executar('CREATE INDEX IF NOT EXISTS idx_receitas_criado_em ON receitas(data_criacao DESC)');
   await executar('CREATE INDEX IF NOT EXISTS idx_exercicios_criado_em ON exercicios(data_criacao DESC)');
   await executar('CREATE INDEX IF NOT EXISTS idx_planos_tipo ON planos_alimentares(tipo)');
