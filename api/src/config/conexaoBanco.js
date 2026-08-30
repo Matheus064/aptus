@@ -196,5 +196,28 @@ const inicializarBanco = async () => {
   )`);
   await executar('CREATE INDEX IF NOT EXISTS idx_mensagens_conversa ON mensagens(remetente_id, destinatario_id, data_criacao)');
   await executar('CREATE INDEX IF NOT EXISTS idx_notificacoes_usuario ON notificacoes(usuario_id, lido, data_criacao DESC)');
+  await executar(`CREATE TABLE IF NOT EXISTS ingredientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL UNIQUE, 
+    tipo_alimento TEXT, categoria TEXT, calorias_por_100g REAL, 
+    proteina_por_100g REAL, carboidrato_por_100g REAL, gordura_por_100g REAL, 
+    fibra_por_100g REAL, foto_url TEXT, ativo INTEGER DEFAULT 1,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS receitas_ingredientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, receita_id INTEGER NOT NULL, ingrediente_id INTEGER NOT NULL,
+    quantidade REAL NOT NULL, unidade_medida TEXT NOT NULL, 
+    FOREIGN KEY (receita_id) REFERENCES receitas(id) ON DELETE CASCADE,
+    FOREIGN KEY (ingrediente_id) REFERENCES ingredientes(id)
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS planos_gerados_ia (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER, plano_alimentar_id INTEGER,
+    parametros TEXT NOT NULL, resultado_texto TEXT, status TEXT DEFAULT 'processando',
+    data_geracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    FOREIGN KEY (plano_alimentar_id) REFERENCES planos_alimentares(id) ON DELETE SET NULL
+  )`);
+  await executar('CREATE INDEX IF NOT EXISTS idx_ingredientes_nome ON ingredientes(nome)');
+  await executar('CREATE INDEX IF NOT EXISTS idx_receitas_ingredientes ON receitas_ingredientes(receita_id)');
+  await executar('CREATE INDEX IF NOT EXISTS idx_planos_gerados_ia_usuario ON planos_gerados_ia(usuario_id)');
 };
 module.exports = { banco, executar, buscar, listar, inicializarBanco };
