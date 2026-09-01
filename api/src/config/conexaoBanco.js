@@ -219,5 +219,95 @@ const inicializarBanco = async () => {
   await executar('CREATE INDEX IF NOT EXISTS idx_ingredientes_nome ON ingredientes(nome)');
   await executar('CREATE INDEX IF NOT EXISTS idx_receitas_ingredientes ON receitas_ingredientes(receita_id)');
   await executar('CREATE INDEX IF NOT EXISTS idx_planos_gerados_ia_usuario ON planos_gerados_ia(usuario_id)');
+  await executar(`CREATE TABLE IF NOT EXISTS planos_receitas_detalhado (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, plano_id INTEGER NOT NULL, receita_id INTEGER NOT NULL,
+    dia_plano INTEGER NOT NULL CHECK(dia_plano BETWEEN 1 AND 365), refeicao TEXT,
+    ordem_refeicao INTEGER DEFAULT 1, porcoes_customizadas INTEGER, calorias_customizadas INTEGER,
+    macros_customizadas TEXT DEFAULT '{}', notas TEXT, substitutos TEXT DEFAULT '[]',
+    consumido INTEGER DEFAULT 0, data_consumo TIMESTAMP, foto_evidencia_url TEXT, ativo INTEGER DEFAULT 1,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (plano_id) REFERENCES planos_alimentares(id) ON DELETE CASCADE,
+    FOREIGN KEY (receita_id) REFERENCES receitas(id) ON DELETE CASCADE
+  )`);
+  await executar('CREATE INDEX IF NOT EXISTS idx_planos_receitas_dia ON planos_receitas_detalhado(plano_id, dia_plano)');
+  await executar(`CREATE TABLE IF NOT EXISTS historico_consumo_usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, data DATE NOT NULL,
+    receita_id INTEGER NOT NULL, refeicao TEXT, consumido INTEGER DEFAULT 1,
+    porcoes_consumidas REAL, calorias_consumidas INTEGER, macros_consumidas TEXT DEFAULT '{}',
+    foto_url TEXT, notas TEXT, sentimento INTEGER CHECK(sentimento BETWEEN 1 AND 5),
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(usuario_id, data, receita_id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (receita_id) REFERENCES receitas(id) ON DELETE CASCADE
+  )`);
+  await executar('CREATE INDEX IF NOT EXISTS idx_consumo_usuario_data ON historico_consumo_usuario(usuario_id, data)');
+  await executar(`CREATE TABLE IF NOT EXISTS lista_compras_usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, plano_id INTEGER,
+    data_criada TIMESTAMP DEFAULT CURRENT_TIMESTAMP, data_compra TIMESTAMP,
+    itens TEXT NOT NULL DEFAULT '[]', total_estimado REAL DEFAULT 0, total_pago REAL DEFAULT 0,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (plano_id) REFERENCES planos_alimentares(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS exercicios_execucao (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, exercicio_id INTEGER NOT NULL UNIQUE,
+    execucao_estruturada TEXT DEFAULT '[]', tempo_total_execucao_segundos INTEGER DEFAULT 0,
+    video_completo_url TEXT, video_curto_url TEXT, videos_por_angulo TEXT DEFAULT '{}',
+    equipamento_necessario TEXT DEFAULT '[]', dicas_seguranca TEXT DEFAULT '[]',
+    FOREIGN KEY (exercicio_id) REFERENCES exercicios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS sessoes_exercicios (
+    id TEXT PRIMARY KEY, usuario_id INTEGER NOT NULL, exercicio_id INTEGER NOT NULL,
+    series_totais INTEGER NOT NULL, repeticoes_por_serie INTEGER, peso REAL,
+    series_completadas INTEGER DEFAULT 0, tempo_total_segundos INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'ativa', notas_gerais TEXT, data_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMP, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (exercicio_id) REFERENCES exercicios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS historico_exercicios_usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, exercicio_id INTEGER NOT NULL,
+    sessao_id TEXT, data_execucao DATE NOT NULL, completado INTEGER DEFAULT 0,
+    series_completadas INTEGER, repeticoes_completadas INTEGER, peso_usado REAL,
+    tempo_total_segundos INTEGER, dificuldade_percebida INTEGER CHECK(dificuldade_percebida BETWEEN 1 AND 10),
+    tecnica_correcta INTEGER CHECK(tecnica_correcta BETWEEN 0 AND 100), dor_ou_desconforto TEXT,
+    notas TEXT, analise_ia TEXT, score_execucao INTEGER CHECK(score_execucao BETWEEN 0 AND 100),
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (exercicio_id) REFERENCES exercicios(id) ON DELETE CASCADE
+  )`);
+  await executar('CREATE INDEX IF NOT EXISTS idx_historico_exercicios_data ON historico_exercicios_usuario(usuario_id, data_execucao)');
+  await executar(`CREATE TABLE IF NOT EXISTS posts_usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, conteudo TEXT NOT NULL,
+    tipo TEXT NOT NULL CHECK(tipo IN ('progresso','receita','exercicio','motivacao','antes_depois')),
+    foto_url TEXT, video_url TEXT, hashtags TEXT DEFAULT '[]', mentions TEXT DEFAULT '[]',
+    localizacao TEXT, curtidas INTEGER DEFAULT 0, comentarios_count INTEGER DEFAULT 0,
+    compartilhamentos INTEGER DEFAULT 0, data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS curtidas_posts (
+    usuario_id INTEGER NOT NULL, post_id INTEGER NOT NULL, data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(usuario_id, post_id), FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY(post_id) REFERENCES posts_usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS comentarios_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, post_id INTEGER NOT NULL,
+    conteudo TEXT NOT NULL, curtidas INTEGER DEFAULT 0, data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY(post_id) REFERENCES posts_usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS ia_agentes_preferencias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL UNIQUE,
+    dietas_favoritas TEXT DEFAULT '[]', ingredientes_favoritos TEXT DEFAULT '[]', ingredientes_odeia TEXT DEFAULT '[]',
+    calorias_preferidas INTEGER, tempo_preparo_maximo INTEGER, musculos_preferem_treinar TEXT DEFAULT '[]',
+    dificuldade_exercicios INTEGER, tempo_treino_preferido INTEGER, objetivo_principal TEXT,
+    meta_peso_kg REAL, data_meta DATE, horario_mais_ativo TEXT DEFAULT '[]', dias_mais_ativos TEXT DEFAULT '[]',
+    score_compatibilidade_ultima_recomendacao REAL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+  await executar(`CREATE TABLE IF NOT EXISTS ia_recomendacoes_usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL, tipo TEXT NOT NULL,
+    item_id INTEGER, score_compatibilidade REAL, motivo_recomendacao TEXT, motivos_detalhados TEXT DEFAULT '[]',
+    mostrado INTEGER DEFAULT 0, clicado INTEGER DEFAULT 0, curtido INTEGER DEFAULT 0, salvo INTEGER DEFAULT 0,
+    gerado_por_agente TEXT, data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
 };
 module.exports = { banco, executar, buscar, listar, inicializarBanco };
