@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3').verbose();
 
 const databasePath = path.resolve(process.env.DATABASE_PATH || './db/aptus.db');
 const outputPath = path.resolve(process.argv[2] || './db/aptus-backup.sql');
+const incluirDados = process.argv.includes('--incluir-dados');
 
 const quoteIdentifier = (value) => `"${String(value).replaceAll('"', '""')}"`;
 
@@ -45,11 +46,13 @@ const exportarBanco = async () => {
 
     for (const table of tables) {
       const columns = await all(database, `PRAGMA table_info(${quoteIdentifier(table.name)})`);
-      const rows = await all(database, `SELECT * FROM ${quoteIdentifier(table.name)}`);
       const columnList = columns.map((column) => quoteIdentifier(column.name)).join(', ');
-      for (const row of rows) {
-        const values = columns.map((column) => quoteValue(row[column.name])).join(', ');
-        lines.push(`INSERT INTO ${quoteIdentifier(table.name)} (${columnList}) VALUES (${values});`);
+      if (incluirDados) {
+        const rows = await all(database, `SELECT * FROM ${quoteIdentifier(table.name)}`);
+        for (const row of rows) {
+          const values = columns.map((column) => quoteValue(row[column.name])).join(', ');
+          lines.push(`INSERT INTO ${quoteIdentifier(table.name)} (${columnList}) VALUES (${values});`);
+        }
       }
     }
 
