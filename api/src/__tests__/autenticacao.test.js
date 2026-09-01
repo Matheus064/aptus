@@ -27,3 +27,20 @@ test('rejeita credenciais inválidas e admin no registro público', async () => 
 test('protege perfil sem token', async () => {
   expect((await request(app).get('/api/usuarios/me')).status).toBe(401);
 });
+
+test('envia dados de nutricionista para verificação', async () => {
+  const email = `nutri-${Date.now()}@aptus.dev`;
+  const registro = await request(app).post('/api/auth/registro').send({ nome_completo: 'Nutri Teste', email, senha: 'senha1234', role: 'nutricionista' });
+  expect(registro.status).toBe(201);
+  const resposta = await request(app).post('/api/auth/verificar-nutricionista').set('Authorization', `Bearer ${registro.body.token}`).send({ numero_crn: `CRN-${Date.now()}`, especializacoes: ['low-carb'] });
+  expect(resposta.status).toBe(200);
+  expect(resposta.body.sucesso).toBe(true);
+});
+
+test('rejeita token inválido e role sem permissão', async () => {
+  expect((await request(app).get('/api/usuarios/me').set('Authorization', 'Bearer token-invalido')).status).toBe(401);
+  const email = `user-role-${Date.now()}@aptus.dev`;
+  const registro = await request(app).post('/api/auth/registro').send({ nome_completo: 'Usuário Role', email, senha: 'senha1234', role: 'user' });
+  const resposta = await request(app).post('/api/auth/verificar-nutricionista').set('Authorization', `Bearer ${registro.body.token}`).send({ numero_crn: `CRN-${Date.now()}`, especializacoes: [] });
+  expect(resposta.status).toBe(403);
+});
