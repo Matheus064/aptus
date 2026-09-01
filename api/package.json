@@ -19,7 +19,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
