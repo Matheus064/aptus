@@ -6,7 +6,7 @@ const {
   obterSuggestoesPlanos,
   calcularNecessidadesNutricionais,
 } = require('../controladores/iaCtrl');
-const { autenticar } = require('../middleware/autenticacao');
+const autenticar = require('../middleware/autenticacao');
 
 /**
  * POST /api/ia/gerar-plano
