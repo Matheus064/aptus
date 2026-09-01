@@ -66,10 +66,11 @@ const inicializarBanco = async () => {
     tecnica TEXT NOT NULL, criado_por INTEGER NOT NULL, video_url TEXT,
     musculos_trabalhados TEXT DEFAULT '[]', dificuldade INTEGER, series_recomendadas INTEGER,
     repeticoes_recomendadas INTEGER, descanso_segundos INTEGER, contraindicacoes TEXT,
-    praticas INTEGER DEFAULT 0, curtidas INTEGER DEFAULT 0, ativo INTEGER DEFAULT 1,
+    praticas INTEGER DEFAULT 0, curtidas INTEGER DEFAULT 0, ambientes TEXT DEFAULT '["casa","academia"]', ativo INTEGER DEFAULT 1,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (criado_por) REFERENCES usuarios(id)
   )`);
+  await executar('ALTER TABLE exercicios ADD COLUMN ambientes TEXT DEFAULT \'["casa","academia"]\'').catch(() => {});
   await executar(`CREATE TABLE IF NOT EXISTS planos_alimentares (
     id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT NOT NULL, descricao TEXT NOT NULL,
     criado_por INTEGER NOT NULL, duracao_dias INTEGER, calorias_alvo INTEGER, dificuldade TEXT,

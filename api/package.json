@@ -7,7 +7,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "jest --runInBand",
-    "backup:db": "node scripts/exportarBanco.js"
+    "backup:db": "node scripts/exportarBanco.js",
+    "seed:exercicios": "node scripts/semeiarExercicios.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",

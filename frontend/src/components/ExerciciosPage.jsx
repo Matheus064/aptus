@@ -7,7 +7,8 @@ const grupos = {
 };
 
 function VideoExercicio({ item }) {
-  if (item.video_url) return <video className="exercicio-video" src={item.video_url} muted autoPlay loop playsInline controls />;
+  const [falhou, setFalhou] = useState(false);
+  if (item.video_url && !falhou) return <video className="exercicio-video" src={item.video_url} muted autoPlay loop playsInline controls onError={() => setFalhou(true)} />;
   return <div className="exercicio-video exercicio-placeholder"><span>▶</span><small>Vídeo de execução em breve</small></div>;
 }
 
@@ -25,7 +26,7 @@ export default function ExerciciosPage({ token }) {
       .catch(error => setErro(error.message));
   }, [musculo]);
 
-  const visiveis = itens.filter(item => !musculo || (item.musculos_trabalhados || '').includes(musculo));
+  const visiveis = itens.filter(item => (!musculo || (item.musculos_trabalhados || '').includes(musculo)) && (() => { try { return JSON.parse(item.ambientes || '["casa","academia"]').includes(modo); } catch { return true; } })());
   const iniciar = async item => {
     try {
       const resposta = await requisicao(`/exercicios/${item.id}/iniciar-sessao`, { method: 'POST', token, body: { series: item.series_recomendadas || 3, repeticoes: item.repeticoes_recomendadas || 12 } });

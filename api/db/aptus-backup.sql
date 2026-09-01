@@ -51,7 +51,7 @@ CREATE TABLE exercicios (
     musculos_trabalhados TEXT DEFAULT '[]', dificuldade INTEGER, series_recomendadas INTEGER,
     repeticoes_recomendadas INTEGER, descanso_segundos INTEGER, contraindicacoes TEXT,
     praticas INTEGER DEFAULT 0, curtidas INTEGER DEFAULT 0, ativo INTEGER DEFAULT 1,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ambientes TEXT DEFAULT '["casa","academia"]',
     FOREIGN KEY (criado_por) REFERENCES usuarios(id)
   );
 CREATE TABLE exercicios_execucao (
