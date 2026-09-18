@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: aptus-api
+    runtime: node
+    rootDir: api
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://matheus064.github.io
+      - key: DATABASE_PATH
+        value: /tmp/aptus.db
+      - key: JWT_SECRET
+        generateValue: true

@@ -406,3 +406,12 @@ O workflow em `.github/workflows/deploy.yml` publica automaticamente o frontend 
 `https://matheus064.github.io/aptus/`
 
 Para login, cadastro e dados online funcionarem nesse endereço, configure no GitHub uma Actions variable chamada `VITE_API_URL` com a URL pública da API, terminando em `/api`. O GitHub Pages hospeda apenas o frontend estático; a API Node/Express precisa continuar rodando em um serviço de hospedagem próprio.
+
+### Backend no Render
+
+1. Crie um Web Service no [Render](https://render.com/) conectado ao repositório `Matheus064/aptus`.
+2. Use o arquivo `render.yaml` (Blueprint) ou configure `api` como Root Directory, `npm ci` como Build Command e `npm start` como Start Command.
+3. Copie a URL gerada pelo Render, acrescente `/api` e cadastre-a no GitHub em **Settings > Secrets and variables > Actions > Variables** com o nome `VITE_API_URL`.
+4. Execute novamente o workflow `Publicar Aptus` em **Actions > Run workflow**.
+
+O plano gratuito do Render usa armazenamento temporário para o SQLite (`/tmp/aptus.db`), então os dados podem ser apagados quando o serviço reiniciar. Para produção, use um banco persistente e armazenamento externo para uploads.
