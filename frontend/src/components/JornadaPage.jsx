@@ -1,0 +1,64 @@
+import { useEffect, useState } from 'react';
+import { requisicao } from '../api';
+
+const vazio = { titulo: '', descricao: '', duracao_dias: 7, calorias_alvo: '' };
+
+export default function JornadaPage({ token, usuario }) {
+  const [aba, setAba] = useState('comunidade');
+  const [posts, setPosts] = useState([]);
+  const [post, setPost] = useState({ conteudo: '', tipo: 'motivacao' });
+  const [comentario, setComentario] = useState({});
+  const [planos, setPlanos] = useState([]);
+  const [plano, setPlano] = useState(vazio);
+  const [grupos, setGrupos] = useState([]);
+  const [perfilId, setPerfilId] = useState('');
+  const [perfil, setPerfil] = useState(null);
+  const [erro, setErro] = useState('');
+  const [mensagem, setMensagem] = useState('');
+
+  const carregarPosts = () => requisicao('/posts?page=1&limit=20', { token }).then(data => setPosts(data.posts || []));
+  const carregarPlanos = () => requisicao('/planos', { token }).then(data => setPlanos(data || []));
+  const carregarGrupos = () => requisicao('/comunidade/grupos', { token }).then(setGrupos);
+  useEffect(() => { carregarPosts().catch(e => setErro(e.message)); carregarPlanos().catch(e => setErro(e.message)); carregarGrupos().catch(e => setErro(e.message)); }, [token]);
+
+  const executar = async (acao, sucesso = '') => { try { setErro(''); await acao(); setMensagem(sucesso); } catch (e) { setErro(e.message); } };
+  const publicar = event => { event.preventDefault(); executar(async () => { await requisicao('/posts', { method: 'POST', token, body: post }); setPost({ conteudo: '', tipo: 'motivacao' }); await carregarPosts(); }, 'Publicação criada.'); };
+  const comentar = (id, event) => { event.preventDefault(); executar(async () => { await requisicao(`/posts/${id}/comentarios`, { method: 'POST', token, body: { conteudo: comentario[id] } }); setComentario({ ...comentario, [id]: '' }); }, 'Comentário adicionado.'); };
+  const criarPlano = event => { event.preventDefault(); executar(async () => { await requisicao('/planos', { method: 'POST', token, body: plano }); setPlano(vazio); await carregarPlanos(); }, 'Plano criado.'); };
+  const salvarPerfil = event => { event.preventDefault(); executar(async () => { const data = await requisicao(`/usuarios/${perfilId}`, { token }); setPerfil(data); }, 'Perfil carregado.'); };
+
+  return <section className="pagina jornada">
+    <p className="eyebrow">todas as ferramentas</p><h2>Minha jornada</h2>
+    <div className="tags jornada-tabs">{[['comunidade','Comunidade'],['planos','Planos'],['grupos','Grupos'],['perfil','Perfil público'],['conta','Minha conta'],['admin','Admin']].map(([id, label]) => <button key={id} className={aba === id ? 'selecionado' : ''} onClick={() => setAba(id)}>{label}</button>)}</div>
+    {erro && <p className="erro">{erro}</p>}{mensagem && <p className="sucesso">{mensagem}</p>}
+    {aba === 'comunidade' && <div className="jornada-grid"><form className="mini-form" onSubmit={publicar}><h3>Compartilhe com a comunidade</h3><textarea required value={post.conteudo} onChange={e => setPost({ ...post, conteudo: e.target.value })} placeholder="Como foi seu dia?" /><select value={post.tipo} onChange={e => setPost({ ...post, tipo: e.target.value })}><option value="motivacao">Motivação</option><option value="progresso">Progresso</option><option value="receita">Receita</option><option value="exercicio">Exercício</option></select><button className="primario">Publicar</button></form><div className="jornada-lista">{posts.map(item => <article className="post" key={item.id}><div className="post-corpo"><div className="autor"><b>{item.autor_nome}</b>{item.autor_verificado ? <small>Profissional verificado</small> : null}</div><p>{item.conteudo}</p><small>{item.curtidas || 0} curtidas · {item.comentarios || 0} comentários</small><form onSubmit={e => comentar(item.id, e)}><input required value={comentario[item.id] || ''} onChange={e => setComentario({ ...comentario, [item.id]: e.target.value })} placeholder="Escreva um comentário" /><button>Comentar</button></form><button onClick={() => executar(() => requisicao(`/comunidade/reportes`, { method: 'POST', token, body: { tipo: 'post', alvo_id: item.id, motivo: 'Conteúdo a analisar' } }), 'Reporte enviado.')}>Reportar</button><button onClick={() => executar(() => requisicao(`/posts/${item.id}`, { method: 'DELETE', token }).then(carregarPosts), 'Publicação removida.')}>Excluir</button></div></article>)}</div></div>}
+    {aba === 'planos' && <PlanosJornada token={token} planos={planos} carregarPlanos={carregarPlanos} executar={executar} plano={plano} setPlano={setPlano} criarPlano={criarPlano} />}
+    {aba === 'grupos' && <GruposJornada token={token} usuario={usuario} grupos={grupos} executar={executar} />}
+    {aba === 'perfil' && <form className="mini-form" onSubmit={salvarPerfil}><h3>Encontrar perfil público</h3><input required type="number" placeholder="ID do usuário" value={perfilId} onChange={e => setPerfilId(e.target.value)} /><button className="primario">Visualizar</button>{perfil && <div className="perfil-publico"><h3>{perfil.nome_completo}</h3><p>{perfil.bio || 'Ainda sem biografia.'}</p><small>{perfil.publicacoes} publicações · {perfil.seguidores} seguidores</small><button onClick={() => executar(() => requisicao(`/usuarios/${perfil.id}/seguir`, { method: 'POST', token }), 'Acompanhamento atualizado.')}>Seguir</button></div>}</form>}
+    {aba === 'conta' && <ContaJornada token={token} usuario={usuario} executar={executar} />}
+    {aba === 'admin' && usuario.role === 'admin' && <AdminPanel token={token} executar={executar} />}
+    {aba === 'admin' && usuario.role !== 'admin' && <p className="vazio">Acesso restrito ao administrador.</p>}
+  </section>;
+}
+
+function PlanosJornada({ token, planos, carregarPlanos, executar, plano, setPlano, criarPlano }) {
+  const [selecionado, setSelecionado] = useState(null);
+  return <div className="jornada-grid"><form className="mini-form" onSubmit={criarPlano}><h3>Criar plano alimentar</h3><input required placeholder="Título" value={plano.titulo} onChange={e => setPlano({ ...plano, titulo: e.target.value })} /><textarea required placeholder="Descrição" value={plano.descricao} onChange={e => setPlano({ ...plano, descricao: e.target.value })} /><input type="number" min="1" placeholder="Duração em dias" value={plano.duracao_dias} onChange={e => setPlano({ ...plano, duracao_dias: e.target.value })} /><input type="number" placeholder="Calorias alvo" value={plano.calorias_alvo} onChange={e => setPlano({ ...plano, calorias_alvo: e.target.value })} /><button className="primario">Criar plano</button></form><div className="jornada-lista">{planos.map(item => <article className="plano" key={item.id}><h3>{item.titulo}</h3><p>{item.descricao}</p><small>{item.duracao_dias || '—'} dias · {item.calorias_alvo || '—'} kcal</small><div><button onClick={() => executar(async () => { const detalhe = await requisicao(`/planos/${item.id}`, { token }); setSelecionado(detalhe); }, 'Detalhes carregados.')}>Detalhes</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}/seguir`, { method: 'POST', token }), 'Plano seguido.')}>Seguir</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'DELETE', token }).then(carregarPlanos), 'Plano removido.')}>Excluir</button></div>{selecionado?.id === item.id && <div className="detalhe-plano"><p>{selecionado.receitas?.length || 0} receitas · {selecionado.exercicios?.length || 0} exercícios</p><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'PUT', token, body: { descricao: `${item.descricao} (atualizado)` } }), 'Plano atualizado.')}>Atualizar descrição</button></div>}</article>)}</div></div>;
+}
+
+function GruposJornada({ token, usuario, grupos, executar }) {
+  const [grupo, setGrupo] = useState({ nome: '', descricao: '' });
+  return <div className="jornada-lista">{['nutricionista', 'admin'].includes(usuario.role) && <form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/comunidade/grupos', { method: 'POST', token, body: grupo }), 'Grupo criado.'); setGrupo({ nome: '', descricao: '' }); }}><h3>Criar grupo de suporte</h3><input required placeholder="Nome do grupo" value={grupo.nome} onChange={e => setGrupo({ ...grupo, nome: e.target.value })} /><textarea required placeholder="Descrição" value={grupo.descricao} onChange={e => setGrupo({ ...grupo, descricao: e.target.value })} /><button className="primario">Criar grupo</button></form>}<h3>Grupos de suporte</h3>{grupos.map(item => <article className="plano" key={item.id}><h3>{item.nome}</h3><p>{item.descricao}</p><small>{item.membros} participantes</small><button onClick={() => executar(() => requisicao(`/comunidade/grupos/${item.id}/entrar`, { method: 'POST', token }), 'Você entrou no grupo.')}>Participar</button></article>)}</div>;
+}
+
+function ContaJornada({ token, usuario, executar }) {
+  const [dados, setDados] = useState({ nome_completo: usuario.nome_completo || '', bio: usuario.bio || '', peso_atual: usuario.peso_atual || '', peso_meta: usuario.peso_meta || '', altura: usuario.altura || '' });
+  const [numero_crn, setNumeroCrn] = useState(usuario.numero_crn || '');
+  return <div className="jornada-grid"><form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/usuarios/me', { method: 'PUT', token, body: dados }), 'Perfil atualizado.'); }}><h3>Atualizar meu perfil</h3><input required value={dados.nome_completo} onChange={e => setDados({ ...dados, nome_completo: e.target.value })} placeholder="Nome completo" /><textarea value={dados.bio} onChange={e => setDados({ ...dados, bio: e.target.value })} placeholder="Biografia" /><input type="number" step="0.1" value={dados.peso_atual} onChange={e => setDados({ ...dados, peso_atual: e.target.value })} placeholder="Peso atual" /><input type="number" step="0.1" value={dados.peso_meta} onChange={e => setDados({ ...dados, peso_meta: e.target.value })} placeholder="Peso meta" /><input type="number" step="0.1" value={dados.altura} onChange={e => setDados({ ...dados, altura: e.target.value })} placeholder="Altura" /><button className="primario">Salvar perfil</button></form>{usuario.role === 'nutricionista' && <form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/auth/verificar-nutricionista', { method: 'POST', token, body: { numero_crn, especializacoes: [] } }), 'Solicitação de CRN enviada.'); }}><h3>Verificar CRN</h3><input required value={numero_crn} onChange={e => setNumeroCrn(e.target.value)} placeholder="Número do CRN" /><button className="primario">Enviar para análise</button></form>}</div>;
+}
+
+function AdminPanel({ token, executar }) {
+  const [dados, setDados] = useState(null); const [saude, setSaude] = useState(null); const [reportes, setReportes] = useState([]); const [id, setId] = useState('');
+  useEffect(() => { requisicao('/admin/dashboard', { token }).then(setDados); requisicao('/admin/metricas/saude', { token }).then(setSaude); requisicao('/admin/moderacao/reportes', { token }).then(setReportes); }, [token]);
+  return <div className="jornada-lista"><div className="metricas">{dados && Object.entries(dados).map(([chave, valor]) => <article key={chave}><b>{valor}</b><span>{chave.replaceAll('_', ' ')}</span></article>)}{saude && Object.entries(saude).map(([chave, valor]) => <article key={chave}><b>{valor ?? '—'}</b><span>{chave.replaceAll('_', ' ')}</span></article>)}</div><form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao(`/admin/nutricionistas/${id}/verificar`, { method: 'POST', token }), 'Nutricionista verificado.'); }}><h3>Aprovar nutricionista</h3><input required type="number" value={id} onChange={e => setId(e.target.value)} placeholder="ID do nutricionista" /><button className="primario">Aprovar CRN</button></form><form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao(`/admin/usuarios/${id}/bloquear`, { method: 'POST', token }), 'Usuário bloqueado.'); }}><h3>Bloquear usuário</h3><input required type="number" value={id} onChange={e => setId(e.target.value)} placeholder="ID do usuário" /><button className="primario">Bloquear</button></form><h3>Reportes pendentes</h3>{reportes.map(reporte => <article className="plano" key={reporte.id}><p>{reporte.tipo}: {reporte.motivo}</p><button onClick={() => executar(() => requisicao(`/admin/moderacao/reportes/${reporte.id}`, { method: 'PUT', token, body: { status: 'resolvido' } }), 'Reporte resolvido.')}>Resolver</button><button onClick={() => executar(() => requisicao(`/admin/moderacao/reportes/${reporte.id}`, { method: 'PUT', token, body: { status: 'rejeitado' } }), 'Reporte rejeitado.')}>Rejeitar</button></article>)}</div>;
+}
