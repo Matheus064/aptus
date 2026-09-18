@@ -7,5 +7,7 @@ router.post('/', auth, ctrl.criar);
 router.post('/:id/curtir', auth, ctrl.curtir);
 router.delete('/:id/curtir', auth, ctrl.curtir);
 router.post('/:id/comentarios', auth, ctrl.comentar);
+router.get('/:id/comentarios', auth, ctrl.listarComentarios);
+router.delete('/:id', auth, ctrl.remover);
 
 module.exports = router;

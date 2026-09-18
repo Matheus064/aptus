@@ -54,4 +54,27 @@ async function comentar(req, res, next) {
   } catch (error) { return next(error); }
 }
 
-module.exports = { criar, listarPosts, curtir, comentar };
+async function listarComentarios(req, res, next) {
+  try {
+    const post = await buscar('SELECT id FROM posts_usuarios WHERE id = ?', [req.params.id]);
+    if (!post) return res.status(404).json({ erro: 'Publicação não encontrada.' });
+    const comentarios = await listar(`SELECT c.*, u.nome_completo, u.foto_perfil_url
+      FROM comentarios_posts c JOIN usuarios u ON u.id = c.usuario_id
+      WHERE c.post_id = ? ORDER BY c.data_criacao ASC`, [post.id]);
+    return res.json({ comentarios });
+  } catch (error) { return next(error); }
+}
+
+async function remover(req, res, next) {
+  try {
+    const post = await buscar('SELECT id, usuario_id FROM posts_usuarios WHERE id = ?', [req.params.id]);
+    if (!post) return res.status(404).json({ erro: 'Publicação não encontrada.' });
+    if (Number(post.usuario_id) !== Number(req.usuario.sub) && req.usuario.role !== 'admin') {
+      return res.status(403).json({ erro: 'Você só pode excluir sua própria publicação.' });
+    }
+    await executar('DELETE FROM posts_usuarios WHERE id = ?', [post.id]);
+    return res.status(204).end();
+  } catch (error) { return next(error); }
+}
+
+module.exports = { criar, listarPosts, curtir, comentar, listarComentarios, remover };
