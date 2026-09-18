@@ -398,3 +398,11 @@ Projeto desenvolvido para fins educacionais no **IFMT — Instituto Federal de M
 
 - **Repositório**: [github.com/Matheus064/aptus](https://github.com/Matheus064/aptus)
 - **Issues & Discussões**: Abra uma issue no GitHub para dúvidas e sugestões
+
+## Publicação no GitHub Pages
+
+O workflow em `.github/workflows/deploy.yml` publica automaticamente o frontend a cada push na branch `main`. Com este repositório, o endereço público será:
+
+`https://matheus064.github.io/aptus/`
+
+Para login, cadastro e dados online funcionarem nesse endereço, configure no GitHub uma Actions variable chamada `VITE_API_URL` com a URL pública da API, terminando em `/api`. O GitHub Pages hospeda apenas o frontend estático; a API Node/Express precisa continuar rodando em um serviço de hospedagem próprio.
