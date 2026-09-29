@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { modoDemo, requisicao } from './api';
+import { modoDemo, requisicao, urlDaApi } from './api';
 import { useAuth } from './context/AuthContext';
 import Medalhas from './components/Medalhas';
 import ExerciciosPage from './components/ExerciciosPage';
@@ -9,6 +9,7 @@ import './interacoes.css';
 import './auth-carousel.css';
 import './perfil.css';
 import './demo.css';
+import './compatibilidade.css';
 
 const abas = [
   ['feed', '⌂', 'Início'], ['descobrir', '⌕', 'Descobrir'], ['planos', '◫', 'Planos'], ['jornada', '✦', 'Jornada'],
@@ -185,12 +186,28 @@ function FotoPerfil({ usuario, token, convidado }) {
 
     setErro(''); setSucesso(''); setSalvando(true);
     try {
-      const imagem = await createImageBitmap(arquivo);
+      let imagem;
+      if (typeof createImageBitmap === 'function') imagem = await createImageBitmap(arquivo);
+      else {
+        imagem = await new Promise((resolve, reject) => {
+          const leitor = new FileReader();
+          leitor.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+          leitor.onload = () => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Formato de imagem não suportado.'));
+            img.src = leitor.result;
+          };
+          leitor.readAsDataURL(arquivo);
+        });
+      }
       const escala = Math.min(1, 640 / Math.max(imagem.width, imagem.height));
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(imagem.width * escala); canvas.height = Math.round(imagem.height * escala);
-      canvas.getContext('2d').drawImage(imagem, 0, 0, canvas.width, canvas.height);
-      imagem.close();
+      const contexto = canvas.getContext('2d');
+      if (!contexto) throw new Error('Este navegador não conseguiu processar a imagem.');
+      contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+      imagem.close?.();
       const foto = canvas.toDataURL('image/jpeg', 0.82);
       const atualizado = await requisicao('/usuarios/me', { method: 'PUT', token, body: { foto_perfil_url: foto } });
       atualizarUsuario(atualizado); setSucesso('Foto de perfil atualizada.');
@@ -198,7 +215,7 @@ function FotoPerfil({ usuario, token, convidado }) {
     finally { setSalvando(false); }
   };
 
-  return <div className="foto-perfil-area">{usuario.foto_perfil_url ? <img className="avatar grande perfil-foto" src={usuario.foto_perfil_url} alt={`Foto de ${usuario.nome_completo}`} /> : <i className="avatar grande a1" aria-hidden="true" />}{!convidado && <label className="foto-perfil-escolher">{salvando ? 'Salvando foto…' : 'Escolher foto'}<input type="file" accept="image/*" onChange={enviarFoto} disabled={salvando} /></label>}<Aviso erro={erro} sucesso={sucesso} /></div>;
+  return <div className="foto-perfil-area">{usuario.foto_perfil_url ? <img className="avatar grande perfil-foto" src={urlDaApi(usuario.foto_perfil_url)} alt={`Foto de ${usuario.nome_completo}`} /> : <i className="avatar grande a1" aria-hidden="true" />}{!convidado && <label className="foto-perfil-escolher">{salvando ? 'Salvando foto…' : 'Escolher foto'}<input type="file" accept="image/*" onChange={enviarFoto} disabled={salvando} /></label>}<Aviso erro={erro} sucesso={sucesso} /></div>;
 }
 
 function Perfil({ usuario, token, convidado }) {

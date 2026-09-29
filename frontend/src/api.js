@@ -12,6 +12,18 @@ const apontaParaOFrontend = (() => {
 const API_URL = (apiConfigurada && !apontaParaOFrontend ? apiConfigurada.replace(/\/+$/, '') : '') || (import.meta.env.DEV ? '/api' : '');
 export const modoDemo = !API_URL;
 
+export function urlDaApi(caminho) {
+  if (!caminho) return undefined;
+  if (/^(?:data:|blob:|https?:\/\/)/i.test(caminho)) return caminho;
+  if (!API_URL) return caminho;
+  try {
+    const origem = new URL(API_URL, globalThis.location?.href || 'http://localhost').origin;
+    return new URL(caminho, `${origem}/`).href;
+  } catch {
+    return caminho;
+  }
+}
+
 function respostaDemo(caminho, metodo) {
   const [rota, query = ''] = caminho.split('?');
   if (metodo !== 'GET') throw new Error('Modo demonstração: API pública indisponível. Esta ação não foi salva.');

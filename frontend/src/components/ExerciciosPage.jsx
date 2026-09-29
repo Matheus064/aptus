@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { requisicao } from '../api';
+import { requisicao, urlDaApi } from '../api';
 
 const grupos = {
   casa: ['perna', 'glúteo', 'core', 'braço'],
@@ -8,7 +8,7 @@ const grupos = {
 
 function VideoExercicio({ item }) {
   const [falhou, setFalhou] = useState(false);
-  if (item.video_url && !falhou) return <video className="exercicio-video" src={item.video_url} muted autoPlay loop playsInline controls onError={() => setFalhou(true)} />;
+  if (item.video_url && !falhou) return <video className="exercicio-video" src={urlDaApi(item.video_url)} muted autoPlay loop playsInline controls onError={() => setFalhou(true)} />;
   return <div className="exercicio-video exercicio-placeholder"><span>▶</span><small>Vídeo de execução em breve</small></div>;
 }
 
