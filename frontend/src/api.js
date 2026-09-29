@@ -1,6 +1,15 @@
 import { exerciciosDemo, receitasDemo } from './demoData';
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || (import.meta.env.DEV ? '/api' : '');
+const apiConfigurada = import.meta.env.VITE_API_URL?.trim();
+const apontaParaOFrontend = (() => {
+  if (!apiConfigurada || typeof globalThis.location === 'undefined') return false;
+  try {
+    return new URL(apiConfigurada, globalThis.location.href).origin === globalThis.location.origin;
+  } catch {
+    return true;
+  }
+})();
+const API_URL = (apiConfigurada && !apontaParaOFrontend ? apiConfigurada.replace(/\/+$/, '') : '') || (import.meta.env.DEV ? '/api' : '');
 export const modoDemo = !API_URL;
 
 function respostaDemo(caminho, metodo) {
