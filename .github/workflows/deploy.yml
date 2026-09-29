@@ -35,7 +35,7 @@ jobs:
       - name: Compilar frontend
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://aptus-api.onrender.com/api' }}
         run: npm run build
 
       - name: Configurar GitHub Pages
