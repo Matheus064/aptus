@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { modoDemo, requisicao } from '../api';
 
 const AuthContext = createContext(null);
@@ -14,6 +14,15 @@ catch { storage.removeItem('aptus_usuario'); storage.removeItem('aptus_token'); 
 
 export function AuthProvider({ children }) {
   const [sessao, setSessao] = useState(salvo ? { token: storage.getItem('aptus_token'), usuario: salvo } : null);
+  useEffect(() => {
+    const limparSessaoExpirada = () => {
+      storage.removeItem('aptus_token');
+      storage.removeItem('aptus_usuario');
+      setSessao(null);
+    };
+    window.addEventListener('aptus:session-expirada', limparSessaoExpirada);
+    return () => window.removeEventListener('aptus:session-expirada', limparSessaoExpirada);
+  }, []);
   const guardar = (dados) => { storage.setItem('aptus_token', dados.token); storage.setItem('aptus_usuario', JSON.stringify(dados.usuario)); setSessao(dados); };
   const login = async (email, senha, role) => guardar(await requisicao('/auth/login', { method: 'POST', body: { email, senha, ...(role ? { role } : {}) } }));
   const entrarComoConvidado = async () => {

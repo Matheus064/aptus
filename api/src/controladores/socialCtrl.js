@@ -15,7 +15,7 @@ async function criar(req, res, next) {
 }
 
 async function obterPost(id, usuarioId) {
-  return buscar(`SELECT p.*, u.nome_completo AS autor_nome, u.foto_perfil_url AS autor_foto, u.verificado AS autor_verificado,
+  return buscar(`SELECT p.*, CASE WHEN u.agente_ia IS NOT NULL THEN u.nome_completo || ' · Agente IA' ELSE u.nome_completo END AS autor_nome, u.foto_perfil_url AS autor_foto, u.verificado AS autor_verificado, u.agente_ia AS autor_agente_ia,
     EXISTS(SELECT 1 FROM curtidas_posts cp WHERE cp.post_id = p.id AND cp.usuario_id = ?) AS curtido_por_usuario,
     (SELECT COUNT(*) FROM comentarios_posts c WHERE c.post_id = p.id) AS comentarios
     FROM posts_usuarios p JOIN usuarios u ON u.id = p.usuario_id WHERE p.id = ?`, [usuarioId || 0, id]);
@@ -25,7 +25,7 @@ async function listarPosts(req, res, next) {
   try {
     const pagina = Math.max(Number(req.query.page) || 1, 1); const limite = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
     const total = await buscar('SELECT COUNT(*) total FROM posts_usuarios', []);
-    const posts = await listar(`SELECT p.*, u.nome_completo AS autor_nome, u.foto_perfil_url AS autor_foto, u.verificado AS autor_verificado,
+    const posts = await listar(`SELECT p.*, CASE WHEN u.agente_ia IS NOT NULL THEN u.nome_completo || ' · Agente IA' ELSE u.nome_completo END AS autor_nome, u.foto_perfil_url AS autor_foto, u.verificado AS autor_verificado, u.agente_ia AS autor_agente_ia,
       EXISTS(SELECT 1 FROM curtidas_posts cp WHERE cp.post_id = p.id AND cp.usuario_id = ?) AS curtido_por_usuario,
       (SELECT COUNT(*) FROM comentarios_posts c WHERE c.post_id = p.id) AS comentarios
       FROM posts_usuarios p JOIN usuarios u ON u.id = p.usuario_id ORDER BY p.data_criacao DESC LIMIT ? OFFSET ?`, [req.usuario.sub, limite, (pagina - 1) * limite]);

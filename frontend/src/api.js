@@ -63,6 +63,9 @@ export async function requisicao(caminho, opcoes = {}) {
     try { dados = JSON.parse(texto); }
     catch { dados = { mensagem: texto }; }
   }
+  if (resposta.status === 401 && opcoes.token && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('aptus:session-expirada'));
+  }
   if (!resposta.ok) throw new Error(dados?.mensagem || dados?.erro || 'Não foi possível concluir a operação.');
   return dados;
 }

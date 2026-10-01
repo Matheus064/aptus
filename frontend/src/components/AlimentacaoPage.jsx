@@ -3,6 +3,27 @@ import { requisicao, urlDaApi } from '../api';
 
 const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
+const mapaImagensReceitas = {
+  'Aveia cremosa com iogurte, chia e frutas': 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=900&q=80',
+  'Bowl brasileiro de frango, arroz integral e feijão': 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80',
+  'Salada morna de lentilha com tomate e pepino': 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80',
+  'Peixe assado com batata e brócolis': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=900&q=80',
+  'Omelete de espinafre e tomate com pão integral': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=80',
+  'Grão-de-bico com legumes e molho de tahine': 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=900&q=80',
+};
+
+const resultadoReceita = {
+  'Aveia cremosa com iogurte, chia e frutas': 'Resultado: café da manhã leve, cremoso, saciante e cheio de energia.',
+  'Bowl brasileiro de frango, arroz integral e feijão': 'Resultado: prato completo, nutritivo e ideal para manter a fome controlada.',
+  'Salada morna de lentilha com tomate e pepino': 'Resultado: refeição fresca, digestiva e rica em fibras para o dia.',
+  'Peixe assado com batata e brócolis': 'Resultado: jantar equilibrado com proteína e sabor úmido e suculento.',
+  'Omelete de espinafre e tomate com pão integral': 'Resultado: café da manhã equilibrado, saboroso e bem energético.',
+  'Grão-de-bico com legumes e molho de tahine': 'Resultado: prato hearty, colorido e muito satisfatório para a rotina.',
+};
+
+const imagemDaReceita = (receita) => mapaImagensReceitas[receita?.titulo] || mapaImagensReceitas[receita?.nome] || 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80';
+const resultadoDaReceita = (receita) => resultadoReceita[receita?.titulo] || resultadoReceita[receita?.nome] || 'Resultado: prato equilibrado, saboroso e prático para o dia a dia.';
+
 export default function AlimentacaoPage({ token, convidado = false, receitaInicial = null, aoAdicionarReceita }) {
   const [aba, setAba] = useState('explorar');
   const [receitas, setReceitas] = useState([]);
@@ -81,7 +102,7 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
     {erro && <p className="erro">{erro}</p>}
     {sucesso && <p className="sucesso" role="status">{sucesso}</p>}
     {planoAtual && <div className="semana-area"><div className="section-heading"><div><p className="eyebrow">dia {planoAtual.dia_atual} do seu plano</p><h3>{planoAtual.titulo}</h3></div><span className="chip">{planoAtual.progresso_percentual}% concluído</span></div><div className="cartoes-grade">{(planoAtual.refeicoes_hoje || []).map(refeicao => <article className="cartao-interativo" key={refeicao.id}><h4>{refeicao.titulo}</h4><p>{refeicao.refeicao || 'Refeição'} · {refeicao.calorias || '—'} kcal</p><button className="primario" disabled={carregando} onClick={() => registrarRefeicao(refeicao)}>{consumidas[refeicao.id] ? 'Desfazer registro' : 'Marcar como consumida'}</button></article>)}</div></div>}
-    {aba === 'explorar' && <div className="receitas-area"><div className="section-heading"><div><p className="eyebrow">para cozinhar hoje</p><h3>Receitas que cabem na rotina</h3></div><span className="chip">{receitas.length} disponíveis</span></div><div className="receitas-grid">{receitas.map(receita => <article className="receita-smart" key={receita.id}><div className="receita-imagem">{receita.foto_url ? <img src={urlDaApi(receita.foto_url)} loading="lazy" alt="" /> : <span>🥗</span>}</div><div className="receita-info"><span className="chip">{receita.categoria || 'caseira'}</span><h3>{receita.titulo}</h3><p>{receita.descricao}</p><div><span>{receita.tempo_preparo || '20'} min</span><span>{receita.calorias || '—'} kcal</span><button onClick={() => adicionarDia('Seg', receita)}>＋ semana</button></div></div></article>)}</div>{!receitas.length && <p className="vazio">Ainda não há receitas publicadas.</p>}</div>}
+    {aba === 'explorar' && <div className="receitas-area"><div className="section-heading"><div><p className="eyebrow">para cozinhar hoje</p><h3>Receitas que cabem na rotina</h3></div><span className="chip">{receitas.length} disponíveis</span></div><div className="receitas-grid">{receitas.map(receita => <article className="receita-smart" key={receita.id}><div className="receita-imagem">{receita.foto_url ? <img src={urlDaApi(receita.foto_url)} loading="lazy" alt={receita.titulo} /> : <img src={imagemDaReceita(receita)} loading="lazy" alt={receita.titulo} />}</div><div className="receita-info"><span className="chip">{receita.categoria || 'caseira'}</span><h3>{receita.titulo}</h3><p>{receita.descricao}</p><p className="resultado-receita">{resultadoDaReceita(receita)}</p><div><span>{receita.tempo_preparo || '20'} min</span><span>{receita.calorias || '—'} kcal</span><button onClick={() => adicionarDia('Seg', receita)}>＋ semana</button></div></div></article>)}</div>{!receitas.length && <p className="vazio">Ainda não há receitas publicadas.</p>}</div>}
     {aba === 'planejar' && <div className="semana-area"><div className="section-heading"><div><p className="eyebrow">planejamento</p><h3>Uma semana já encaminhada</h3></div><span className="chip">{Object.keys(selecionadas).length}/7 dias</span></div><div className="semana-grid">{dias.map(dia => <article className="dia-card" key={dia}><strong>{dia}</strong>{selecionadas[dia] ? <><h4>{selecionadas[dia].titulo}</h4><small>{selecionadas[dia].calorias || '—'} kcal</small><button onClick={() => removerDia(dia)}>Remover</button></> : <button onClick={() => receitas[0] && adicionarDia(dia, receitas[0])}>+ adicionar receita</button>}</article>)}</div></div>}
     {aba === 'compras' && <div className="compras-area"><div className="section-heading"><div><p className="eyebrow">próxima ida ao mercado</p><h3>Lista de compras</h3></div><span className="chip">{compras.filter(item => !marcadas[item.id]).length} pendentes</span></div>{compras.length ? compras.map(item => <label className={`compra-item ${marcadas[item.id] ? 'item-comprado' : ''}`} key={item.id}><input type="checkbox" checked={Boolean(marcadas[item.id])} onChange={evento => setMarcadas(atual => ({ ...atual, [item.id]: evento.target.checked }))} /> <span>{item.nome}</span><small>{item.quantidade} {item.unidade}</small></label>) : <p className="vazio">Siga um plano com receitas para montar sua lista de compras.</p>}</div>}
   </section>;

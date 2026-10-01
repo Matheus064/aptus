@@ -38,6 +38,7 @@ const inicializarBanco = async () => {
     data_nascimento DATE,
     numero_crn TEXT UNIQUE,
     especializacoes TEXT,
+    agente_ia TEXT UNIQUE,
     verificado INTEGER DEFAULT 0,
     rating REAL DEFAULT 0.0,
     total_seguidores INTEGER DEFAULT 0,
@@ -49,6 +50,8 @@ const inicializarBanco = async () => {
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
   `);
+  await executar('ALTER TABLE usuarios ADD COLUMN agente_ia TEXT').catch(() => {});
+  await executar('CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_agente_ia ON usuarios(agente_ia)');
   await executar('CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email)');
   await executar('CREATE INDEX IF NOT EXISTS idx_usuarios_role ON usuarios(role)');
   await executar(`CREATE TABLE IF NOT EXISTS receitas (

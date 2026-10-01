@@ -329,6 +329,23 @@ O formato utilizado é:
 - Cada opção deve levar à área correta.
 - As interfaces devem informar claramente o tipo de acesso.
 
+### US25 — Personalizar calendário da rotina
+
+**Como** usuário autenticado
+
+**Quero** registrar e personalizar atividades em um calendário pessoal
+
+**Para** organizar minha rotina e acompanhar o progresso das minhas metas.
+
+**Critérios de aceitação:**
+- O calendário deve estar acessível em **Jornada > Minha conta**.
+- Deve ser possível navegar entre os meses e selecionar um dia.
+- Para cada dia, o usuário deve poder salvar um título, um tipo de atividade, observações e um status (pendente ou concluído).
+- Os tipos disponíveis devem incluir meta, treino, refeição, descanso e reflexão.
+- O calendário deve indicar visualmente os dias com atividades e as atividades concluídas.
+- Ao selecionar um dia com atividade, o usuário deve conseguir consultar seus detalhes e alterar seu status ou limpar o registro.
+- Os dados devem ser salvos e carregados separadamente para cada usuário.
+
 ---
 
 ## 5. Regras gerais de experiência
@@ -372,3 +389,4 @@ As funcionalidades do APTUS devem buscar:
 | US22 | Nutricionista | Publicar receitas |
 | US23 | Visitante | Conhecer o APTUS |
 | US24 | Visitante | Escolher tipo de acesso |
+| US25 | Usuário | Personalizar calendário da rotina |

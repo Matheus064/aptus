@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { requisicao } from '../api';
 
 const vazio = { titulo: '', descricao: '', duracao_dias: 7, calorias_alvo: '' };
+const chaveDataLocal = data => `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
 
 export default function JornadaPage({ token, usuario }) {
   const [aba, setAba] = useState('comunidade');
@@ -41,6 +42,87 @@ export default function JornadaPage({ token, usuario }) {
   </section>;
 }
 
+function CalendarioPessoal({ usuario }) {
+  const storageKey = `aptus_calendario_${usuario?.id || 'visitante'}`;
+  const hoje = new Date();
+  const [mesAtual, setMesAtual] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const [selecionado, setSelecionado] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()));
+  const [eventos, setEventos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
+  });
+  const [form, setForm] = useState({ titulo: '', tipo: 'meta', observacoes: '', status: 'pendente' });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(eventos));
+  }, [eventos, storageKey]);
+
+  const chaveSelecionada = chaveDataLocal(selecionado);
+  const itemSelecionado = eventos[chaveSelecionada] || { titulo: '', tipo: 'meta', observacoes: '', status: 'pendente' };
+
+  const comecarMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1);
+  const fimMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0);
+  const primeiroDia = (comecarMes.getDay() + 6) % 7;
+  const diasMes = [];
+  for (let index = 0; index < primeiroDia; index += 1) {
+    diasMes.push(null);
+  }
+  for (let dia = 1; dia <= fimMes.getDate(); dia += 1) {
+    diasMes.push(new Date(mesAtual.getFullYear(), mesAtual.getMonth(), dia));
+  }
+  while (diasMes.length % 7 !== 0) {
+    diasMes.push(null);
+  }
+
+  const totalDiasConcluidos = Object.values(eventos).filter((valor) => valor?.status === 'concluido').length;
+
+  const salvarEvento = evento => {
+    evento.preventDefault();
+    const titulo = form.titulo.trim();
+    if (!titulo) return;
+    const novoEvento = {
+      ...itemSelecionado,
+      titulo,
+      tipo: form.tipo,
+      observacoes: form.observacoes.trim(),
+      status: form.status,
+    };
+    setEventos(prev => ({ ...prev, [chaveSelecionada]: novoEvento }));
+    setForm({ titulo: '', tipo: 'meta', observacoes: '', status: 'pendente' });
+  };
+
+  const alternarStatus = () => {
+    setEventos(prev => ({
+      ...prev,
+      [chaveSelecionada]: {
+        ...itemSelecionado,
+        titulo: itemSelecionado.titulo || 'Meta do dia',
+        tipo: itemSelecionado.tipo || 'meta',
+        observacoes: itemSelecionado.observacoes || '',
+        status: itemSelecionado.status === 'concluido' ? 'pendente' : 'concluido',
+      },
+    }));
+  };
+
+  const limparDia = () => {
+    setEventos(prev => {
+      const copia = { ...prev };
+      delete copia[chaveSelecionada];
+      return copia;
+    });
+    setForm({ titulo: '', tipo: 'meta', observacoes: '', status: 'pendente' });
+  };
+
+  return <div className="calendario-personalizado"><div className="calendario-topo"><div><p className="eyebrow">personalizado</p><h3>Calendário da sua rotina</h3></div><div className="calendario-stats"><span>{totalDiasConcluidos} concluídos</span></div></div><div className="calendario-navegacao"><button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1))}>‹</button><strong>{mesAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong><button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1))}>›</button></div><div className="calendario-grade"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>{diasMes.map((dia, index) => {
+      const ch = dia ? chaveDataLocal(dia) : `vazio-${index}`;
+      const marcado = eventos[ch];
+      const hojeCh = chaveDataLocal(hoje);
+      const selecionadoCh = chaveDataLocal(selecionado);
+      if (!dia) return <span key={ch} className="calendario-vazio" aria-hidden="true" />;
+      return <button key={ch} type="button" className={`calendario-dia ${ch === selecionadoCh ? 'selecionado' : ''} ${marcado?.status === 'concluido' ? 'concluido' : ''} ${ch === hojeCh ? 'hoje' : ''}`} onClick={() => setSelecionado(dia)}><small>{dia.getDate()}</small>{marcado && <em>{marcado.tipo}</em>}</button>;
+    })}</div><form className="mini-form calendario-form" onSubmit={salvarEvento}><h3>{selecionado.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</h3><input required value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} placeholder="Ex.: treino, refeição, descanso" />
+      <div className="calendario-aux"><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })}><option value="meta">Meta</option><option value="treino">Treino</option><option value="refeicao">Refeição</option><option value="descanso">Descanso</option><option value="reflexao">Reflexão</option></select><select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}><option value="pendente">Pendente</option><option value="concluido">Concluído</option></select></div><textarea value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} placeholder="Detalhes do dia, objetivo ou lembrete..."></textarea><div className="calendario-acoes"><button type="submit" className="primario">Salvar no calendário</button>{itemSelecionado?.titulo && <button type="button" className="texto" onClick={alternarStatus}>{itemSelecionado.status === 'concluido' ? 'Marcar pendente' : 'Marcar concluído'}</button>}{itemSelecionado?.titulo && <button type="button" className="texto" onClick={limparDia}>Limpar</button>}</div></form>{itemSelecionado?.titulo && <div className="calendario-resumo"><h4>Resumo do dia</h4><p><strong>{itemSelecionado.titulo}</strong></p><p>{itemSelecionado.observacoes || 'Sem observações adicionais.'}</p><p className="calendario-status">Status: <span>{itemSelecionado.status === 'concluido' ? 'Concluído' : 'Pendente'}</span></p></div>}</div>;
+}
+
 function PlanosJornada({ token, planos, carregarPlanos, executar, plano, setPlano, criarPlano }) {
   const [selecionado, setSelecionado] = useState(null);
   return <div className="jornada-grid"><form className="mini-form" onSubmit={criarPlano}><h3>Criar plano alimentar</h3><input required placeholder="Título" value={plano.titulo} onChange={e => setPlano({ ...plano, titulo: e.target.value })} /><textarea required placeholder="Descrição" value={plano.descricao} onChange={e => setPlano({ ...plano, descricao: e.target.value })} /><input type="number" min="1" placeholder="Duração em dias" value={plano.duracao_dias} onChange={e => setPlano({ ...plano, duracao_dias: e.target.value })} /><input type="number" placeholder="Calorias alvo" value={plano.calorias_alvo} onChange={e => setPlano({ ...plano, calorias_alvo: e.target.value })} /><button className="primario">Criar plano</button></form><div className="jornada-lista">{planos.map(item => <article className="plano" key={item.id}><h3>{item.titulo}</h3><p>{item.descricao}</p><small>{item.duracao_dias || '—'} dias · {item.calorias_alvo || '—'} kcal</small><div><button onClick={() => executar(async () => { const detalhe = await requisicao(`/planos/${item.id}`, { token }); setSelecionado(detalhe); }, 'Detalhes carregados.')}>Detalhes</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}/seguir`, { method: 'POST', token }), 'Plano seguido.')}>Seguir</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'DELETE', token }).then(carregarPlanos), 'Plano removido.')}>Excluir</button></div>{selecionado?.id === item.id && <div className="detalhe-plano"><p>{selecionado.receitas?.length || 0} receitas · {selecionado.exercicios?.length || 0} exercícios</p><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'PUT', token, body: { descricao: `${item.descricao} (atualizado)` } }), 'Plano atualizado.')}>Atualizar descrição</button></div>}</article>)}</div></div>;
@@ -54,7 +136,7 @@ function GruposJornada({ token, usuario, grupos, executar }) {
 function ContaJornada({ token, usuario, executar }) {
   const [dados, setDados] = useState({ nome_completo: usuario.nome_completo || '', bio: usuario.bio || '', peso_atual: usuario.peso_atual || '', peso_meta: usuario.peso_meta || '', altura: usuario.altura || '' });
   const [numero_crn, setNumeroCrn] = useState(usuario.numero_crn || '');
-  return <div className="jornada-grid"><form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/usuarios/me', { method: 'PUT', token, body: dados }), 'Perfil atualizado.'); }}><h3>Atualizar meu perfil</h3><input required value={dados.nome_completo} onChange={e => setDados({ ...dados, nome_completo: e.target.value })} placeholder="Nome completo" /><textarea value={dados.bio} onChange={e => setDados({ ...dados, bio: e.target.value })} placeholder="Biografia" /><input type="number" step="0.1" value={dados.peso_atual} onChange={e => setDados({ ...dados, peso_atual: e.target.value })} placeholder="Peso atual" /><input type="number" step="0.1" value={dados.peso_meta} onChange={e => setDados({ ...dados, peso_meta: e.target.value })} placeholder="Peso meta" /><input type="number" step="0.1" value={dados.altura} onChange={e => setDados({ ...dados, altura: e.target.value })} placeholder="Altura" /><button className="primario">Salvar perfil</button></form>{usuario.role === 'nutricionista' && <form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/auth/verificar-nutricionista', { method: 'POST', token, body: { numero_crn, especializacoes: [] } }), 'Solicitação de CRN enviada.'); }}><h3>Verificar CRN</h3><input required value={numero_crn} onChange={e => setNumeroCrn(e.target.value)} placeholder="Número do CRN" /><button className="primario">Enviar para análise</button></form>}</div>;
+  return <div className="jornada-grid"><form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/usuarios/me', { method: 'PUT', token, body: dados }), 'Perfil atualizado.'); }}><h3>Atualizar meu perfil</h3><input required value={dados.nome_completo} onChange={e => setDados({ ...dados, nome_completo: e.target.value })} placeholder="Nome completo" /><textarea value={dados.bio} onChange={e => setDados({ ...dados, bio: e.target.value })} placeholder="Biografia" /><input type="number" step="0.1" value={dados.peso_atual} onChange={e => setDados({ ...dados, peso_atual: e.target.value })} placeholder="Peso atual" /><input type="number" step="0.1" value={dados.peso_meta} onChange={e => setDados({ ...dados, peso_meta: e.target.value })} placeholder="Peso meta" /><input type="number" step="0.1" value={dados.altura} onChange={e => setDados({ ...dados, altura: e.target.value })} placeholder="Altura" /><button className="primario">Salvar perfil</button></form>{usuario.role === 'nutricionista' && <form className="mini-form" onSubmit={event => { event.preventDefault(); executar(() => requisicao('/auth/verificar-nutricionista', { method: 'POST', token, body: { numero_crn, especializacoes: [] } }), 'Solicitação de CRN enviada.'); }}><h3>Verificar CRN</h3><input required value={numero_crn} onChange={e => setNumeroCrn(e.target.value)} placeholder="Número do CRN" /><button className="primario">Enviar para análise</button></form>}<CalendarioPessoal usuario={usuario} /></div>;
 }
 
 function AdminPanel({ token, executar }) {

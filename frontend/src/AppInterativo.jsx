@@ -6,6 +6,7 @@ import ExerciciosPage from './components/ExerciciosPage';
 import AlimentacaoPage from './components/AlimentacaoPage';
 import JornadaPage from './components/JornadaPage';
 import './interacoes.css';
+import './agentes.css';
 import './auth-carousel.css';
 import './perfil.css';
 import './demo.css';
@@ -126,8 +127,16 @@ function Planos({ token, convidado, receitaInicial, aoAdicionarReceita }) {
 }
 
 function Mensagens({ token, convidado = false }) {
-  const [conversas, setConversas] = useState([]); const [selecionada, setSelecionada] = useState(null); const [mensagens, setMensagens] = useState([]);
-  const [nova, setNova] = useState(false); const [destinatario, setDestinatario] = useState(''); const [texto, setTexto] = useState(''); const [erro, setErro] = useState(''); const [sucesso, setSucesso] = useState('');
+  const [conversas, setConversas] = useState([]);
+  const [agentes, setAgentes] = useState([]);
+  const [selecionada, setSelecionada] = useState(null);
+  const [mensagens, setMensagens] = useState([]);
+  const [nova, setNova] = useState(false);
+  const [destinatario, setDestinatario] = useState('');
+  const [texto, setTexto] = useState('');
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
+
   const carregar = useCallback(async () => {
     try {
       const resposta = await requisicao('/mensagens/conversas', { token });
@@ -135,17 +144,49 @@ function Mensagens({ token, convidado = false }) {
       setConversas(resposta);
     } catch (error) { setErro(error.message); setConversas([]); }
   }, [token]);
-  const abrir = async conversa => { setErro(''); setSelecionada(conversa); try { setMensagens(await requisicao(`/mensagens/conversa/${conversa.id}`, { token })); await carregar(); } catch (error) { setErro(error.message); } };
-  useEffect(() => { carregar(); }, [carregar]);
+
+  const abrir = async conversa => {
+    setErro('');
+    setNova(false);
+    setSelecionada(conversa);
+    try { setMensagens(await requisicao(`/mensagens/conversa/${conversa.id}`, { token })); await carregar(); }
+    catch (error) { setErro(error.message); }
+  };
+
+  useEffect(() => {
+    carregar();
+    if (!convidado) requisicao('/mensagens/agentes', { token }).then(setAgentes).catch(error => setErro(error.message));
+  }, [carregar, convidado, token]);
+
   const enviar = async evento => {
     evento.preventDefault(); setErro(''); setSucesso('');
     try {
-      const id = Number(selecionada?.id || destinatario); if (!id) throw new Error('Informe o ID numérico da pessoa destinatária.');
-      await requisicao('/mensagens', { method: 'POST', token, body: { destinatario_id: id, conteudo: texto } }); setTexto(''); setNova(false);
-      if (selecionada) await abrir(selecionada); else setSucesso('Mensagem enviada.'); await carregar();
+      const id = Number(selecionada?.id || destinatario);
+      if (!id) throw new Error('Selecione uma conversa ou informe o ID da pessoa destinatária.');
+      await requisicao('/mensagens', { method: 'POST', token, body: { destinatario_id: id, conteudo: texto } });
+      setTexto(''); setNova(false);
+      if (selecionada) await abrir(selecionada); else setSucesso('Mensagem enviada.');
+      await carregar();
     } catch (error) { setErro(error.message); }
   };
-  return <section className="pagina"><div className="titulo"><div><p className="eyebrow">conexões</p><h2>Mensagens</h2></div><button className="primario" disabled={convidado} onClick={() => { setSelecionada(null); setNova(!nova); }}>Nova conversa</button></div>{convidado && <p className="vazio">Crie uma conta para iniciar conversas privadas.</p>}<Aviso erro={erro} sucesso={sucesso} />{nova && <form className="mini-form" onSubmit={enviar}><Campo label="ID da pessoa" type="number" min="1" value={destinatario} onChange={e => setDestinatario(e.target.value)} /><label>Mensagem<input value={texto} onChange={e => setTexto(e.target.value)} required /></label><button className="primario">Enviar</button></form>}<div className="mensagens-layout"><div className="conversas">{conversas.map(conversa => <button className={`conversa-item ${selecionada?.id === conversa.id ? 'ativa' : ''}`} key={conversa.id} onClick={() => abrir(conversa)}><span><b>{conversa.nome_completo}</b><small>{conversa.ultima_mensagem ? new Date(conversa.ultima_mensagem).toLocaleString('pt-BR') : 'Abrir conversa'}</small></span>{conversa.nao_lidas > 0 && <em>{conversa.nao_lidas}</em>}</button>)}{!conversas.length && <p className="vazio">Nenhuma conversa ainda. Inicie uma conversa informando o ID da pessoa.</p>}</div>{selecionada && <div className="painel-conversa"><h3>Conversa com {selecionada.nome_completo}</h3><div className="mensagens-lista">{mensagens.map(mensagem => <article className={Number(mensagem.remetente_id) === Number(selecionada.id) ? 'mensagem recebida' : 'mensagem enviada'} key={mensagem.id}><small>{mensagem.remetente_nome || (Number(mensagem.remetente_id) === Number(selecionada.id) ? selecionada.nome_completo : 'Você')}</small><p>{mensagem.conteudo}</p><time>{new Date(mensagem.data_criacao).toLocaleString('pt-BR')}</time></article>)}{!mensagens.length && <p className="vazio">Diga olá para começar a conversa.</p>}</div><form className="linha-form" onSubmit={enviar}><input aria-label="Sua mensagem" value={texto} onChange={e => setTexto(e.target.value)} placeholder="Escreva uma mensagem…" required /><button className="primario">Enviar</button></form></div>}</div></section>;
+
+  return <section className="pagina">
+    <div className="titulo"><div><p className="eyebrow">conexões</p><h2>Mensagens</h2></div><button className="primario" disabled={convidado} onClick={() => { setSelecionada(null); setNova(!nova); }}>Nova conversa</button></div>
+    {convidado && <p className="vazio">Crie uma conta para iniciar conversas privadas.</p>}
+    <Aviso erro={erro} sucesso={sucesso} />
+    {nova && <form className="mini-form" onSubmit={enviar}><Campo label="ID da pessoa" type="number" min="1" value={destinatario} onChange={e => setDestinatario(e.target.value)} /><label>Mensagem<input value={texto} onChange={e => setTexto(e.target.value)} required /></label><button className="primario">Enviar</button></form>}
+    <div className="mensagens-layout"><div className="conversas">
+      {!convidado && <section className="agentes-ia"><h3>Agentes de IA</h3><p>Perfis virtuais Aptus, identificados como IA. Inicie uma conversa para receber resposta.</p>{agentes.map(agente => <button className={`conversa-item ${selecionada?.id === agente.id ? 'ativa' : ''}`} key={agente.id} onClick={() => abrir(agente)}><span><b>{agente.nome_completo} · IA</b><small>{agente.bio}</small></span><span aria-hidden="true">›</span></button>)}</section>}
+      <h3>Conversas</h3>
+      {conversas.map(conversa => <button className={`conversa-item ${selecionada?.id === conversa.id ? 'ativa' : ''}`} key={conversa.id} onClick={() => abrir(conversa)}><span><b>{conversa.nome_completo}{conversa.agente_ia ? ' · IA' : ''}</b><small>{conversa.ultima_mensagem ? new Date(conversa.ultima_mensagem).toLocaleString('pt-BR') : 'Abrir conversa'}</small></span>{conversa.nao_lidas > 0 && <em>{conversa.nao_lidas}</em>}</button>)}
+      {!conversas.length && <p className="vazio">Nenhuma conversa ainda. Escolha um agente ou inicie uma conversa.</p>}
+    </div>{selecionada && <div className="painel-conversa">
+      <h3>Conversa com {selecionada.nome_completo}{selecionada.agente_ia ? ' · agente de IA' : ''}</h3>
+      {selecionada.agente_ia && <p className="aviso-agente">Você conversa com um perfil virtual Aptus. Não compartilhe dados pessoais ou médicos; as respostas não substituem profissionais de saúde.</p>}
+      <div className="mensagens-lista">{mensagens.map(mensagem => <article className={Number(mensagem.remetente_id) === Number(selecionada.id) ? 'mensagem recebida' : 'mensagem enviada'} key={mensagem.id}><small>{mensagem.remetente_nome || (Number(mensagem.remetente_id) === Number(selecionada.id) ? selecionada.nome_completo : 'Você')}{selecionada.agente_ia && Number(mensagem.remetente_id) === Number(selecionada.id) ? ' · IA' : ''}</small><p>{mensagem.conteudo}</p><time>{new Date(mensagem.data_criacao).toLocaleString('pt-BR')}</time></article>)}{!mensagens.length && <p className="vazio">Diga olá para começar a conversa.</p>}</div>
+      <form className="linha-form" onSubmit={enviar}><input aria-label="Sua mensagem" value={texto} onChange={e => setTexto(e.target.value)} required placeholder="Escreva sua mensagem…" /><button className="primario">Enviar</button></form>
+    </div>}</div>
+  </section>;
 }
 
 function Notificacoes({ token, fechar }) {
