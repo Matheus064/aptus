@@ -37,6 +37,17 @@ test('envia dados de nutricionista para verificação', async () => {
   expect(resposta.body.sucesso).toBe(true);
 });
 
+test('exige o número do CRN para entrar como nutricionista', async () => {
+  const email = `nutri-crn-${Date.now()}@aptus.dev`;
+  const numero_crn = `CRN-${Date.now()}`;
+  const registro = await request(app).post('/api/auth/registro').send({ nome_completo: 'Nutri CRN', email, senha: 'senha1234', role: 'nutricionista', numero_crn });
+  expect(registro.status).toBe(201);
+
+  expect((await request(app).post('/api/auth/login').send({ email, senha: 'senha1234', role: 'nutricionista' })).status).toBe(422);
+  expect((await request(app).post('/api/auth/login').send({ email, senha: 'senha1234', role: 'nutricionista', numero_crn: 'CRN-INCORRETO' })).status).toBe(401);
+  expect((await request(app).post('/api/auth/login').send({ email, senha: 'senha1234', role: 'nutricionista', numero_crn })).status).toBe(200);
+});
+
 test('rejeita token inválido e role sem permissão', async () => {
   expect((await request(app).get('/api/usuarios/me').set('Authorization', 'Bearer token-invalido')).status).toBe(401);
   const email = `user-role-${Date.now()}@aptus.dev`;

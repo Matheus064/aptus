@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('aptus:session-expirada', limparSessaoExpirada);
   }, []);
   const guardar = (dados) => { storage.setItem('aptus_token', dados.token); storage.setItem('aptus_usuario', JSON.stringify(dados.usuario)); setSessao(dados); };
-  const login = async (email, senha, role) => guardar(await requisicao('/auth/login', { method: 'POST', body: { email, senha, ...(role ? { role } : {}) } }));
+  const login = async (email, senha, role, numero_crn = '') => guardar(await requisicao('/auth/login', { method: 'POST', body: { email, senha, ...(role ? { role } : {}), ...(numero_crn ? { numero_crn } : {}) } }));
   const entrarComoConvidado = async () => {
     if (modoDemo) {
       const dados = { token: 'demonstracao-somente-leitura', usuario: { id: 'guest', nome_completo: 'Visitante', role: 'guest' } };

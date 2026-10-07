@@ -16,10 +16,14 @@ async function registro(req, res, next) {
 }
 async function login(req, res, next) {
   try {
-    const { email, senha, role } = req.body;
+    const { email, senha, role, numero_crn } = req.body;
     const usuario = email && await buscar('SELECT * FROM usuarios WHERE email = ?', [email.trim().toLowerCase()]);
     if (!usuario || !await compararHash(senha || '', usuario.senha)) return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
     if (role && usuario.role !== role) return res.status(403).json({ erro: 'Este acesso não corresponde ao papel selecionado.' });
+    if (role === 'nutricionista') {
+      if (!numero_crn || !textoObrigatorio(numero_crn)) return res.status(422).json({ erro: 'Informe o número do CRN para entrar como nutricionista.' });
+      if (usuario.numero_crn !== numero_crn.trim()) return res.status(401).json({ erro: 'Número do CRN inválido.' });
+    }
     if (!usuario.ativo || usuario.bloqueado) return res.status(403).json({ erro: 'Esta conta não está disponível.' });
     return res.json({ usuario: seguro(usuario), token: gerarToken(usuario) });
   } catch (erro) { return next(erro); }

@@ -23,10 +23,17 @@ const resultadoReceita = {
 
 const imagemDaReceita = (receita) => mapaImagensReceitas[receita?.titulo] || mapaImagensReceitas[receita?.nome] || 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80';
 const resultadoDaReceita = (receita) => resultadoReceita[receita?.titulo] || resultadoReceita[receita?.nome] || 'Resultado: prato equilibrado, saboroso e prático para o dia a dia.';
+const passosDaReceita = (receita) => {
+  const texto = receita?.modo_preparo || receita?.descricao || '';
+  const passos = texto.split(/[.!?]+/).map(item => item.trim()).filter(Boolean);
+  return passos.length > 1 ? passos : ['Prepare os ingredientes.', 'Segua o modo de preparo indicado.', 'Sirva com atenção e confira o resultado.'];
+};
 
 export default function AlimentacaoPage({ token, convidado = false, receitaInicial = null, aoAdicionarReceita }) {
   const [aba, setAba] = useState('explorar');
   const [receitas, setReceitas] = useState([]);
+  const [receitaSelecionada, setReceitaSelecionada] = useState(null);
+  const [passoAtual, setPassoAtual] = useState(0);
   const [ingredientes, setIngredientes] = useState('');
   const [selecionadas, setSelecionadas] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`aptus_semana_${token?.slice(-12) || 'visitante'}`) || '{}'); }
@@ -82,6 +89,10 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
 
   const adicionarDia = (dia, receita) => setSelecionadas(prev => ({ ...prev, [dia]: receita }));
   const removerDia = dia => setSelecionadas(prev => { const copia = { ...prev }; delete copia[dia]; return copia; });
+  const abrirReceita = receita => {
+    setReceitaSelecionada(receita);
+    setPassoAtual(0);
+  };
   const registrarRefeicao = async refeicao => {
     if (!planoAtual) return;
     setCarregando(true); setErro(''); setSucesso('');
@@ -102,8 +113,9 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
     {erro && <p className="erro">{erro}</p>}
     {sucesso && <p className="sucesso" role="status">{sucesso}</p>}
     {planoAtual && <div className="semana-area"><div className="section-heading"><div><p className="eyebrow">dia {planoAtual.dia_atual} do seu plano</p><h3>{planoAtual.titulo}</h3></div><span className="chip">{planoAtual.progresso_percentual}% concluído</span></div><div className="cartoes-grade">{(planoAtual.refeicoes_hoje || []).map(refeicao => <article className="cartao-interativo" key={refeicao.id}><h4>{refeicao.titulo}</h4><p>{refeicao.refeicao || 'Refeição'} · {refeicao.calorias || '—'} kcal</p><button className="primario" disabled={carregando} onClick={() => registrarRefeicao(refeicao)}>{consumidas[refeicao.id] ? 'Desfazer registro' : 'Marcar como consumida'}</button></article>)}</div></div>}
-    {aba === 'explorar' && <div className="receitas-area"><div className="section-heading"><div><p className="eyebrow">para cozinhar hoje</p><h3>Receitas que cabem na rotina</h3></div><span className="chip">{receitas.length} disponíveis</span></div><div className="receitas-grid">{receitas.map(receita => <article className="receita-smart" key={receita.id}><div className="receita-imagem">{receita.foto_url ? <img src={urlDaApi(receita.foto_url)} loading="lazy" alt={receita.titulo} /> : <img src={imagemDaReceita(receita)} loading="lazy" alt={receita.titulo} />}</div><div className="receita-info"><span className="chip">{receita.categoria || 'caseira'}</span><h3>{receita.titulo}</h3><p>{receita.descricao}</p><p className="resultado-receita">{resultadoDaReceita(receita)}</p><div><span>{receita.tempo_preparo || '20'} min</span><span>{receita.calorias || '—'} kcal</span><button onClick={() => adicionarDia('Seg', receita)}>＋ semana</button></div></div></article>)}</div>{!receitas.length && <p className="vazio">Ainda não há receitas publicadas.</p>}</div>}
+    {aba === 'explorar' && <div className="receitas-area"><div className="section-heading"><div><p className="eyebrow">para cozinhar hoje</p><h3>Receitas que cabem na rotina</h3></div><span className="chip">{receitas.length} disponíveis</span></div><div className="receitas-grid">{receitas.map(receita => <article className="receita-smart" key={receita.id}><div className="receita-imagem">{receita.foto_url ? <img src={urlDaApi(receita.foto_url)} loading="lazy" alt={receita.titulo} /> : <img src={imagemDaReceita(receita)} loading="lazy" alt={receita.titulo} />}</div><div className="receita-info"><span className="chip">{receita.categoria || 'caseira'}</span><h3>{receita.titulo}</h3><p>{receita.descricao}</p><p className="resultado-receita">{resultadoDaReceita(receita)}</p><div><span>{receita.tempo_preparo || '20'} min</span><span>{receita.calorias || '—'} kcal</span><button onClick={() => abrirReceita(receita)}>Ver passo a passo</button></div></div></article>)}</div>{!receitas.length && <p className="vazio">Ainda não há receitas publicadas.</p>}</div>}
     {aba === 'planejar' && <div className="semana-area"><div className="section-heading"><div><p className="eyebrow">planejamento</p><h3>Uma semana já encaminhada</h3></div><span className="chip">{Object.keys(selecionadas).length}/7 dias</span></div><div className="semana-grid">{dias.map(dia => <article className="dia-card" key={dia}><strong>{dia}</strong>{selecionadas[dia] ? <><h4>{selecionadas[dia].titulo}</h4><small>{selecionadas[dia].calorias || '—'} kcal</small><button onClick={() => removerDia(dia)}>Remover</button></> : <button onClick={() => receitas[0] && adicionarDia(dia, receitas[0])}>+ adicionar receita</button>}</article>)}</div></div>}
     {aba === 'compras' && <div className="compras-area"><div className="section-heading"><div><p className="eyebrow">próxima ida ao mercado</p><h3>Lista de compras</h3></div><span className="chip">{compras.filter(item => !marcadas[item.id]).length} pendentes</span></div>{compras.length ? compras.map(item => <label className={`compra-item ${marcadas[item.id] ? 'item-comprado' : ''}`} key={item.id}><input type="checkbox" checked={Boolean(marcadas[item.id])} onChange={evento => setMarcadas(atual => ({ ...atual, [item.id]: evento.target.checked }))} /> <span>{item.nome}</span><small>{item.quantidade} {item.unidade}</small></label>) : <p className="vazio">Siga um plano com receitas para montar sua lista de compras.</p>}</div>}
+    {receitaSelecionada && <div className="receita-etapa-modal" role="dialog" aria-modal="true" aria-label={`Guia de ${receitaSelecionada.titulo}`}><div className="receita-etapa-card"><button className="guiao-fechar" onClick={() => { setReceitaSelecionada(null); setPassoAtual(0); }}>Fechar</button><div className="receita-etapa-cabeca"><div><p className="eyebrow">roteiro alimentar</p><h3>{receitaSelecionada.titulo}</h3><p>{receitaSelecionada.descricao}</p></div><span className="chip">{receitaSelecionada.tempo_preparo || 20} min</span></div><div className="receita-etapa-meta"><span>{receitaSelecionada.calorias || '—'} kcal</span><span>{receitaSelecionada.porcoes || 1} porção</span><span>{receitaSelecionada.categoria || 'caseira'}</span></div><div className="receita-etapa-progress"><span>Etapa {passoAtual + 1} de {passosDaReceita(receitaSelecionada).length}</span><progress value={passoAtual + 1} max={passosDaReceita(receitaSelecionada).length} /></div><div className="receita-etapa-passos"><article><span>{passoAtual + 1}</span><p>{passosDaReceita(receitaSelecionada)[passoAtual]}</p></article></div><div className="receita-etapa-acao"><button onClick={() => setPassoAtual(atual => Math.max(0, atual - 1))} disabled={passoAtual === 0}>Anterior</button><button className="primario" onClick={() => setPassoAtual(atual => Math.min(passosDaReceita(receitaSelecionada).length - 1, atual + 1))} disabled={passoAtual === passosDaReceita(receitaSelecionada).length - 1}>Próximo passo</button></div></div></div>}
   </section>;
 }

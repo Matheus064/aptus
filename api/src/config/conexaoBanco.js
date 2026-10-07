@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const sqlite3 = require('sqlite3').verbose();
 
-const databasePath = path.resolve(process.env.DATABASE_PATH || './db/aptus.db');
+const databasePath = path.resolve(process.env.DATABASE_PATH || path.join(__dirname, '../../db/aptus.db'));
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 
 const banco = new sqlite3.Database(databasePath);
