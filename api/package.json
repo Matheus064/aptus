@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "src/server.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
@@ -20,7 +23,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "5.1.7"
   },
   "devDependencies": {
     "jest": "^29.7.0",
