@@ -1,4 +1,13 @@
-Aptus — Rede Social para Emagrecimento Saudável#
+# Aptus — Rede Social para Emagrecimento Saudável
+
+## Acesse o Aptus pela web
+
+**O Aptus já pode ser aberto pela internet em qualquer telefone, tablet ou computador, sem instalar nada:** [abrir o Aptus](https://matheus064.github.io/aptus/).
+
+A versão publicada permite explorar a plataforma como convidado. Recursos que precisam de conta ou salvam informações dependem da conexão com a API, que ainda não está configurada na versão pública.
+
+---
+
 📋 Sobre o Projeto#
 O Aptus é uma plataforma web Full Stack que conecta pessoas com obesidade ou má alimentação, oferecendo uma rede social de apoio mútuo e planos de alimentação personalizados para auxiliar na jornada de emagrecimento saudável.
 
