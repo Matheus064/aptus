@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 import { requisicao, urlDaApi } from '../api';
 
 const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const diaAtual = () => dias[(new Date().getDay() + 6) % dias.length];
+const lerArmazenamento = chave => {
+  try { return JSON.parse(globalThis.localStorage?.getItem(chave) || '{}'); }
+  catch { return {}; }
+};
+const salvarArmazenamento = (chave, valor) => {
+  try { globalThis.localStorage?.setItem(chave, JSON.stringify(valor)); }
+  catch { /* A semana continua disponível durante esta sessão se o armazenamento estiver bloqueado. */ }
+};
 
 const mapaImagensReceitas = {
   'Aveia cremosa com iogurte, chia e frutas': 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=900&q=80',
@@ -26,7 +35,7 @@ const resultadoDaReceita = (receita) => resultadoReceita[receita?.titulo] || res
 const passosDaReceita = (receita) => {
   const texto = receita?.modo_preparo || receita?.descricao || '';
   const passos = texto.split(/[.!?]+/).map(item => item.trim()).filter(Boolean);
-  return passos.length > 1 ? passos : ['Prepare os ingredientes.', 'Segua o modo de preparo indicado.', 'Sirva com atenção e confira o resultado.'];
+  return passos.length > 1 ? passos : ['Prepare os ingredientes.', 'Siga o modo de preparo indicado.', 'Sirva com atenção e confira o resultado.'];
 };
 
 export default function AlimentacaoPage({ token, convidado = false, receitaInicial = null, aoAdicionarReceita }) {
@@ -36,15 +45,13 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
   const [passoAtual, setPassoAtual] = useState(0);
   const [ingredientes, setIngredientes] = useState('');
   const [selecionadas, setSelecionadas] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(`aptus_semana_${token?.slice(-12) || 'visitante'}`) || '{}'); }
-    catch { return {}; }
+    return lerArmazenamento(`aptus_semana_${token?.slice(-12) || 'visitante'}`);
   });
   const [compras, setCompras] = useState([]);
   const [planoAtual, setPlanoAtual] = useState(null);
   const [consumidas, setConsumidas] = useState({});
   const [marcadas, setMarcadas] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(`aptus_compras_marcadas_${token?.slice(-12) || 'visitante'}`) || '{}'); }
-    catch { return {}; }
+    return lerArmazenamento(`aptus_compras_marcadas_${token?.slice(-12) || 'visitante'}`);
   });
   const [carregando, setCarregando] = useState(false);
   const [sucesso, setSucesso] = useState('');
@@ -66,17 +73,17 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
 
   useEffect(() => {
     if (!receitaInicial) return;
-    setSelecionadas(atual => ({ ...atual, Seg: receitaInicial }));
+    setSelecionadas(atual => ({ ...atual, [diaAtual()]: receitaInicial }));
     setAba('planejar');
     aoAdicionarReceita?.();
   }, [receitaInicial, aoAdicionarReceita]);
 
   useEffect(() => {
-    localStorage.setItem(`aptus_compras_marcadas_${token?.slice(-12) || 'visitante'}`, JSON.stringify(marcadas));
+    salvarArmazenamento(`aptus_compras_marcadas_${token?.slice(-12) || 'visitante'}`, marcadas);
   }, [marcadas, token]);
 
   useEffect(() => {
-    localStorage.setItem(`aptus_semana_${token?.slice(-12) || 'visitante'}`, JSON.stringify(selecionadas));
+    salvarArmazenamento(`aptus_semana_${token?.slice(-12) || 'visitante'}`, selecionadas);
   }, [selecionadas, token]);
 
   const gerarIdeia = () => {
@@ -84,7 +91,7 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
     if (!lista.length) { setErro('Digite pelo menos um ingrediente.'); return; }
     setErro('');
     setAba('planejar');
-    setSelecionadas({ [dias[new Date().getDay() - 1] || 'Seg']: { titulo: `Receita com ${lista.slice(0, 2).join(' e ')}`, descricao: 'Sugestão rápida para aproveitar o que você já tem.' } });
+    setSelecionadas({ [diaAtual()]: { titulo: `Receita com ${lista.slice(0, 2).join(' e ')}`, descricao: 'Sugestão rápida para aproveitar o que você já tem.' } });
   };
 
   const adicionarDia = (dia, receita) => setSelecionadas(prev => ({ ...prev, [dia]: receita }));
