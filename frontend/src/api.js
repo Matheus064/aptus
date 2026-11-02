@@ -9,7 +9,9 @@ const apontaParaOFrontend = (() => {
     return true;
   }
 })();
-const API_URL = (apiConfigurada && !apontaParaOFrontend ? apiConfigurada.replace(/\/+$/, '') : '') || (import.meta.env.DEV ? '/api' : '');
+const API_URL =
+  (apiConfigurada && !apontaParaOFrontend ? apiConfigurada.replace(/\/+$/, '') : '') ||
+  (import.meta.env.PROD ? 'https://aptus-api-evu0.onrender.com/api' : import.meta.env.DEV ? '/api' : '');
 export const modoDemo = !API_URL;
 
 export function urlDaApi(caminho) {
