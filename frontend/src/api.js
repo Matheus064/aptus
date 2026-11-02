@@ -51,23 +51,38 @@ function respostaDemo(caminho, metodo) {
   throw new Error('Modo demonstração: esta função precisa da API pública, que ainda não está configurada.');
 }
 
+const ehRotaDeDemo = caminho => {
+  const [rota] = caminho.split('?');
+  return rota === '/receitas' || rota === '/exercicios' || rota === '/feed/infinito' || rota === '/discover' || rota.startsWith('/receitas/') || rota.startsWith('/exercicios/');
+};
+
 export async function requisicao(caminho, opcoes = {}) {
-  if (!API_URL) return respostaDemo(caminho, opcoes.method || 'GET');
-  const ehFormData = opcoes.body instanceof FormData;
-  const resposta = await fetch(`${API_URL}${caminho}`, {
-    headers: { ...(ehFormData ? {} : { 'Content-Type': 'application/json' }), ...(opcoes.token ? { Authorization: `Bearer ${opcoes.token}` } : {}) },
-    ...opcoes,
-    body: opcoes.body ? (ehFormData ? opcoes.body : JSON.stringify(opcoes.body)) : undefined,
-  });
-  const texto = await resposta.text();
-  let dados = null;
-  if (texto) {
-    try { dados = JSON.parse(texto); }
-    catch { dados = { mensagem: texto }; }
+  const metodo = opcoes.method || 'GET';
+  if (!API_URL) return respostaDemo(caminho, metodo);
+
+  try {
+    const ehFormData = opcoes.body instanceof FormData;
+    const resposta = await fetch(`${API_URL}${caminho}`, {
+      headers: { ...(ehFormData ? {} : { 'Content-Type': 'application/json' }), ...(opcoes.token ? { Authorization: `Bearer ${opcoes.token}` } : {}) },
+      ...opcoes,
+      body: opcoes.body ? (ehFormData ? opcoes.body : JSON.stringify(opcoes.body)) : undefined,
+    });
+    const texto = await resposta.text();
+    let dados = null;
+    if (texto) {
+      try { dados = JSON.parse(texto); }
+      catch { dados = { mensagem: texto }; }
+    }
+    if (resposta.status === 401 && opcoes.token && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('aptus:session-expirada'));
+    }
+    if (!resposta.ok) {
+      if (metodo === 'GET' && ehRotaDeDemo(caminho)) return respostaDemo(caminho, metodo);
+      throw new Error(dados?.mensagem || dados?.erro || 'Não foi possível concluir a operação.');
+    }
+    return dados;
+  } catch (erro) {
+    if (metodo === 'GET' && ehRotaDeDemo(caminho)) return respostaDemo(caminho, metodo);
+    throw erro;
   }
-  if (resposta.status === 401 && opcoes.token && typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('aptus:session-expirada'));
-  }
-  if (!resposta.ok) throw new Error(dados?.mensagem || dados?.erro || 'Não foi possível concluir a operação.');
-  return dados;
 }
