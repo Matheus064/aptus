@@ -34,6 +34,8 @@ const imagemDaReceita = (receita) => mapaImagensReceitas[receita?.titulo] || map
 const resultadoDaReceita = (receita) => resultadoReceita[receita?.titulo] || resultadoReceita[receita?.nome] || 'Resultado: prato equilibrado, saboroso e prático para o dia a dia.';
 const passosDaReceita = (receita) => {
   const texto = receita?.modo_preparo || receita?.descricao || '';
+  const numerados = texto.split(/(?:^|\s)\d+[.)]\s+/).map(item => item.trim()).filter(Boolean);
+  if (numerados.length > 1) return numerados;
   const passos = texto.split(/[.!?]+/).map(item => item.trim()).filter(Boolean);
   return passos.length > 1 ? passos : ['Prepare os ingredientes.', 'Siga o modo de preparo indicado.', 'Sirva com atenção e confira o resultado.'];
 };
@@ -91,7 +93,7 @@ export default function AlimentacaoPage({ token, convidado = false, receitaInici
     if (!lista.length) { setErro('Digite pelo menos um ingrediente.'); return; }
     setErro('');
     setAba('planejar');
-    setSelecionadas({ [diaAtual()]: { titulo: `Receita com ${lista.slice(0, 2).join(' e ')}`, descricao: 'Sugestão rápida para aproveitar o que você já tem.' } });
+    setSelecionadas(atual => ({ ...atual, [diaAtual()]: { titulo: `Receita com ${lista.slice(0, 2).join(' e ')}`, descricao: 'Sugestão rápida para aproveitar o que você já tem.' } }));
   };
 
   const adicionarDia = (dia, receita) => setSelecionadas(prev => ({ ...prev, [dia]: receita }));

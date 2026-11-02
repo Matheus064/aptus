@@ -23,20 +23,25 @@ export default function JornadaPage({ token, usuario }) {
   useEffect(() => { carregarPosts().catch(e => setErro(e.message)); carregarPlanos().catch(e => setErro(e.message)); carregarGrupos().catch(e => setErro(e.message)); }, [token]);
 
   const executar = async (acao, sucesso = '') => { try { setErro(''); await acao(); setMensagem(sucesso); } catch (e) { setErro(e.message); } };
-  const publicar = event => { event.preventDefault(); executar(async () => { await requisicao('/posts', { method: 'POST', token, body: post }); setPost({ conteudo: '', tipo: 'motivacao' }); await carregarPosts(); }, 'Publicação criada.'); };
-  const comentar = (id, event) => { event.preventDefault(); executar(async () => { await requisicao(`/posts/${id}/comentarios`, { method: 'POST', token, body: { conteudo: comentario[id] } }); setComentario({ ...comentario, [id]: '' }); }, 'Comentário adicionado.'); };
-  const criarPlano = event => { event.preventDefault(); executar(async () => { await requisicao('/planos', { method: 'POST', token, body: plano }); setPlano(vazio); await carregarPlanos(); }, 'Plano criado.'); };
+  const exigirConta = () => {
+    if (usuario.role !== 'guest') return true;
+    setErro('Crie uma conta para realizar esta ação.');
+    return false;
+  };
+  const publicar = event => { event.preventDefault(); if (!exigirConta()) return; executar(async () => { await requisicao('/posts', { method: 'POST', token, body: post }); setPost({ conteudo: '', tipo: 'motivacao' }); await carregarPosts(); }, 'Publicação criada.'); };
+  const comentar = (id, event) => { event.preventDefault(); if (!exigirConta()) return; executar(async () => { await requisicao(`/posts/${id}/comentarios`, { method: 'POST', token, body: { conteudo: comentario[id] } }); setComentario({ ...comentario, [id]: '' }); }, 'Comentário adicionado.'); };
+  const criarPlano = event => { event.preventDefault(); if (!exigirConta()) return; executar(async () => { await requisicao('/planos', { method: 'POST', token, body: plano }); setPlano(vazio); await carregarPlanos(); }, 'Plano criado.'); };
   const salvarPerfil = event => { event.preventDefault(); executar(async () => { const data = await requisicao(`/usuarios/${perfilId}`, { token }); setPerfil(data); }, 'Perfil carregado.'); };
 
   return <section className="pagina jornada">
     <p className="eyebrow">todas as ferramentas</p><h2>Minha jornada</h2>
     <div className="tags jornada-tabs">{[['comunidade','Comunidade'],['planos','Planos'],['grupos','Grupos'],['perfil','Perfil público'],['conta','Minha conta'],['admin','Admin']].map(([id, label]) => <button key={id} className={aba === id ? 'selecionado' : ''} onClick={() => setAba(id)}>{label}</button>)}</div>
     {erro && <p className="erro">{erro}</p>}{mensagem && <p className="sucesso">{mensagem}</p>}
-    {aba === 'comunidade' && <div className="jornada-grid"><form className="mini-form" onSubmit={publicar}><h3>Compartilhe com a comunidade</h3><textarea required value={post.conteudo} onChange={e => setPost({ ...post, conteudo: e.target.value })} placeholder="Como foi seu dia?" /><select value={post.tipo} onChange={e => setPost({ ...post, tipo: e.target.value })}><option value="motivacao">Motivação</option><option value="progresso">Progresso</option><option value="receita">Receita</option><option value="exercicio">Exercício</option></select><button className="primario">Publicar</button></form><div className="jornada-lista">{posts.map(item => <article className="post" key={item.id}><div className="post-corpo"><div className="autor"><b>{item.autor_nome}</b>{item.autor_verificado ? <small>Profissional verificado</small> : null}</div><p>{item.conteudo}</p><small>{item.curtidas || 0} curtidas · {item.comentarios || 0} comentários</small><form onSubmit={e => comentar(item.id, e)}><input required value={comentario[item.id] || ''} onChange={e => setComentario({ ...comentario, [item.id]: e.target.value })} placeholder="Escreva um comentário" /><button>Comentar</button></form><button onClick={() => executar(() => requisicao(`/comunidade/reportes`, { method: 'POST', token, body: { tipo: 'post', alvo_id: item.id, motivo: 'Conteúdo a analisar' } }), 'Reporte enviado.')}>Reportar</button><button onClick={() => executar(() => requisicao(`/posts/${item.id}`, { method: 'DELETE', token }).then(carregarPosts), 'Publicação removida.')}>Excluir</button></div></article>)}</div></div>}
-    {aba === 'planos' && <PlanosJornada token={token} planos={planos} carregarPlanos={carregarPlanos} executar={executar} plano={plano} setPlano={setPlano} criarPlano={criarPlano} />}
+    {aba === 'comunidade' && <div className="jornada-grid"><form className="mini-form" onSubmit={publicar}><h3>Compartilhe com a comunidade</h3><textarea required value={post.conteudo} onChange={e => setPost({ ...post, conteudo: e.target.value })} placeholder="Como foi seu dia?" /><select value={post.tipo} onChange={e => setPost({ ...post, tipo: e.target.value })}><option value="motivacao">Motivação</option><option value="progresso">Progresso</option><option value="receita">Receita</option><option value="exercicio">Exercício</option></select><button className="primario">Publicar</button></form><div className="jornada-lista">{posts.map(item => <article className="post" key={item.id}><div className="post-corpo"><div className="autor"><b>{item.autor_nome}</b>{item.autor_verificado ? <small>Profissional verificado</small> : null}</div><p>{item.conteudo}</p><small>{item.curtidas || 0} curtidas · {item.comentarios || 0} comentários</small><form onSubmit={e => comentar(item.id, e)}><input required value={comentario[item.id] || ''} onChange={e => setComentario({ ...comentario, [item.id]: e.target.value })} placeholder="Escreva um comentário" /><button>Comentar</button></form><button onClick={() => executar(() => requisicao(`/comunidade/reportes`, { method: 'POST', token, body: { tipo: 'post', alvo_id: item.id, motivo: 'Conteúdo a analisar' } }), 'Reporte enviado.')}>Reportar</button>{usuario.role !== 'guest' && <button onClick={() => executar(() => requisicao(`/posts/${item.id}`, { method: 'DELETE', token }).then(carregarPosts), 'Publicação removida.')}>Excluir</button>}</div></article>)}</div></div>}
+    {aba === 'planos' && <PlanosJornada token={token} usuario={usuario} planos={planos} carregarPlanos={carregarPlanos} executar={executar} plano={plano} setPlano={setPlano} criarPlano={criarPlano} />}
     {aba === 'grupos' && <GruposJornada token={token} usuario={usuario} grupos={grupos} executar={executar} carregarGrupos={carregarGrupos} />}
-    {aba === 'perfil' && <form className="mini-form" onSubmit={salvarPerfil}><h3>Encontrar perfil público</h3><input required type="number" placeholder="ID do usuário" value={perfilId} onChange={e => setPerfilId(e.target.value)} /><button className="primario">Visualizar</button>{perfil && <div className="perfil-publico"><h3>{perfil.nome_completo}</h3><p>{perfil.bio || 'Ainda sem biografia.'}</p><small>{perfil.publicacoes} publicações · {perfil.seguidores} seguidores</small><button onClick={() => executar(() => requisicao(`/usuarios/${perfil.id}/seguir`, { method: 'POST', token }), 'Acompanhamento atualizado.')}>Seguir</button></div>}</form>}
-    {aba === 'conta' && <ContaJornada token={token} usuario={usuario} executar={executar} />}
+    {aba === 'perfil' && <form className="mini-form" onSubmit={salvarPerfil}><h3>Encontrar perfil público</h3><input required type="number" placeholder="ID do usuário" value={perfilId} onChange={e => setPerfilId(e.target.value)} /><button className="primario">Visualizar</button>{perfil && <div className="perfil-publico"><h3>{perfil.nome_completo}</h3><p>{perfil.bio || 'Ainda sem biografia.'}</p><small>{perfil.publicacoes} publicações · {perfil.seguidores} seguidores</small>{usuario.role !== 'guest' && <button type="button" onClick={() => executar(() => requisicao(`/usuarios/${perfil.id}/seguir`, { method: 'POST', token }), 'Acompanhamento atualizado.')}>Seguir</button>}</div>}</form>}
+    {aba === 'conta' && (usuario.role === 'guest' ? <p className="vazio">Crie uma conta para editar seus dados pessoais.</p> : <ContaJornada token={token} usuario={usuario} executar={executar} />)}
     {aba === 'admin' && usuario.role === 'admin' && <AdminPanel token={token} executar={executar} />}
     {aba === 'admin' && usuario.role !== 'admin' && <p className="vazio">Acesso restrito ao administrador.</p>}
   </section>;
@@ -119,19 +124,66 @@ function CalendarioPessoal({ usuario }) {
       const hojeCh = chaveDataLocal(hoje);
       const selecionadoCh = chaveDataLocal(selecionado);
       if (!dia) return <span key={ch} className="calendario-vazio" aria-hidden="true" />;
-      return <button key={ch} type="button" className={`calendario-dia ${ch === selecionadoCh ? 'selecionado' : ''} ${marcado?.status === 'concluido' ? 'concluido' : ''} ${ch === hojeCh ? 'hoje' : ''}`} onClick={() => setSelecionado(dia)}><small>{dia.getDate()}</small>{marcado && <em>{marcado.tipo}</em>}</button>;
+      return <button key={ch} type="button" className={`calendario-dia ${ch === selecionadoCh ? 'selecionado' : ''} ${marcado?.status === 'concluido' ? 'concluido' : ''} ${ch === hojeCh ? 'hoje' : ''}`} onClick={() => { setSelecionado(dia); setForm(marcado ? { titulo: marcado.titulo || '', tipo: marcado.tipo || 'meta', observacoes: marcado.observacoes || '', status: marcado.status || 'pendente' } : { titulo: '', tipo: 'meta', observacoes: '', status: 'pendente' }); }}><small>{dia.getDate()}</small>{marcado && <em>{marcado.tipo}</em>}</button>;
     })}</div><form className="mini-form calendario-form" onSubmit={salvarEvento}><h3>{selecionado.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</h3><input required value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} placeholder="Ex.: treino, refeição, descanso" />
       <div className="calendario-aux"><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })}><option value="meta">Meta</option><option value="treino">Treino</option><option value="refeicao">Refeição</option><option value="descanso">Descanso</option><option value="reflexao">Reflexão</option></select><select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}><option value="pendente">Pendente</option><option value="concluido">Concluído</option></select></div><textarea value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} placeholder="Detalhes do dia, objetivo ou lembrete..."></textarea><div className="calendario-acoes"><button type="submit" className="primario">Salvar no calendário</button>{itemSelecionado?.titulo && <button type="button" className="texto" onClick={alternarStatus}>{itemSelecionado.status === 'concluido' ? 'Marcar pendente' : 'Marcar concluído'}</button>}{itemSelecionado?.titulo && <button type="button" className="texto" onClick={limparDia}>Limpar</button>}</div></form>{itemSelecionado?.titulo && <div className="calendario-resumo"><h4>Resumo do dia</h4><p><strong>{itemSelecionado.titulo}</strong></p><p>{itemSelecionado.observacoes || 'Sem observações adicionais.'}</p><p className="calendario-status">Status: <span>{itemSelecionado.status === 'concluido' ? 'Concluído' : 'Pendente'}</span></p></div>}</div>;
 }
 
-function PlanosJornada({ token, planos, carregarPlanos, executar, plano, setPlano, criarPlano }) {
+function PlanosJornada({ token, usuario, planos, carregarPlanos, executar, plano, setPlano, criarPlano }) {
   const [selecionado, setSelecionado] = useState(null);
-  return <div className="jornada-grid"><form className="mini-form" onSubmit={criarPlano}><h3>Criar plano alimentar</h3><input required placeholder="Título" value={plano.titulo} onChange={e => setPlano({ ...plano, titulo: e.target.value })} /><textarea required placeholder="Descrição" value={plano.descricao} onChange={e => setPlano({ ...plano, descricao: e.target.value })} /><input type="number" min="1" placeholder="Duração em dias" value={plano.duracao_dias} onChange={e => setPlano({ ...plano, duracao_dias: e.target.value })} /><input type="number" placeholder="Calorias alvo" value={plano.calorias_alvo} onChange={e => setPlano({ ...plano, calorias_alvo: e.target.value })} /><button className="primario">Criar plano</button></form><div className="jornada-lista">{planos.map(item => <article className="plano" key={item.id}><h3>{item.titulo}</h3><p>{item.descricao}</p><small>{item.duracao_dias || '—'} dias · {item.calorias_alvo || '—'} kcal</small><div><button onClick={() => executar(async () => { const detalhe = await requisicao(`/planos/${item.id}`, { token }); setSelecionado(detalhe); }, 'Detalhes carregados.')}>Detalhes</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}/seguir`, { method: 'POST', token }), 'Plano seguido.')}>Seguir</button><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'DELETE', token }).then(carregarPlanos), 'Plano removido.')}>Excluir</button></div>{selecionado?.id === item.id && <div className="detalhe-plano"><p>{selecionado.receitas?.length || 0} receitas · {selecionado.exercicios?.length || 0} exercícios</p><button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'PUT', token, body: { descricao: `${item.descricao} (atualizado)` } }), 'Plano atualizado.')}>Atualizar descrição</button></div>}</article>)}</div></div>;
+  return <div className="jornada-grid">
+    {usuario.role !== 'guest' && <form className="mini-form" onSubmit={criarPlano}>
+      <h3>Criar plano alimentar</h3>
+      <input required placeholder="Título" value={plano.titulo} onChange={e => setPlano({ ...plano, titulo: e.target.value })} />
+      <textarea required placeholder="Descrição" value={plano.descricao} onChange={e => setPlano({ ...plano, descricao: e.target.value })} />
+      <input type="number" min="1" placeholder="Duração em dias" value={plano.duracao_dias} onChange={e => setPlano({ ...plano, duracao_dias: e.target.value })} />
+      <input type="number" placeholder="Calorias alvo" value={plano.calorias_alvo} onChange={e => setPlano({ ...plano, calorias_alvo: e.target.value })} />
+      <button className="primario">Criar plano</button>
+    </form>}
+    {usuario.role === 'guest' && <p className="vazio">Crie uma conta para criar e seguir planos.</p>}
+    <div className="jornada-lista">{planos.map(item => <article className="plano" key={item.id}>
+      <h3>{item.titulo}</h3><p>{item.descricao}</p><small>{item.duracao_dias || '—'} dias · {item.calorias_alvo || '—'} kcal</small>
+      <div>
+        <button onClick={() => executar(async () => { const detalhe = await requisicao(`/planos/${item.id}`, { token }); setSelecionado(detalhe); }, 'Detalhes carregados.')}>Detalhes</button>
+        {usuario.role !== 'guest' && <>
+          <button onClick={() => executar(async () => { await requisicao(`/planos/${item.id}/seguir`, { method: 'POST', token }); await carregarPlanos(); }, 'Plano seguido.')}>Seguir</button>
+          <button onClick={() => executar(() => requisicao(`/planos/${item.id}`, { method: 'DELETE', token }).then(carregarPlanos), 'Plano removido.')}>Excluir</button>
+        </>}
+      </div>
+      {selecionado?.id === item.id && <div className="detalhe-plano"><p>{selecionado.receitas?.length || 0} receitas · {selecionado.exercicios?.length || 0} exercícios</p>{usuario.role !== 'guest' && <button onClick={() => executar(async () => { await requisicao(`/planos/${item.id}`, { method: 'PUT', token, body: { descricao: `${item.descricao} (atualizado)` } }); setSelecionado(await requisicao(`/planos/${item.id}`, { token })); }, 'Plano atualizado.')}>Atualizar descrição</button>}</div>}
+    </article>)}</div>
+  </div>;
 }
 
 function GruposJornada({ token, usuario, grupos, executar, carregarGrupos }) {
   const [grupo, setGrupo] = useState({ nome: '', descricao: '' });
-  return <div className="jornada-lista">{['nutricionista', 'admin'].includes(usuario.role) && <form className="mini-form" onSubmit={async event => { event.preventDefault(); try { await requisicao('/comunidade/grupos', { method: 'POST', token, body: grupo }); setGrupo({ nome: '', descricao: '' }); await carregarGrupos(); setMensagem('Grupo criado.'); setErro(''); } catch (error) { setErro(error.message); } }}><h3>Criar grupo de suporte</h3><input required placeholder="Nome do grupo" value={grupo.nome} onChange={e => setGrupo({ ...grupo, nome: e.target.value })} /><textarea required placeholder="Descrição" value={grupo.descricao} onChange={e => setGrupo({ ...grupo, descricao: e.target.value })} /><button className="primario">Criar grupo</button></form>}<h3>Grupos de suporte</h3>{grupos.map(item => <article className="plano" key={item.id}><h3>{item.nome}</h3><p>{item.descricao}</p><small>{item.membros} participantes</small><button onClick={() => executar(() => requisicao(`/comunidade/grupos/${item.id}/entrar`, { method: 'POST', token }), 'Você entrou no grupo.')}>Participar</button></article>)}</div>;
+  const criarGrupo = event => {
+    event.preventDefault();
+    executar(async () => {
+      await requisicao('/comunidade/grupos', { method: 'POST', token, body: grupo });
+      setGrupo({ nome: '', descricao: '' });
+      await carregarGrupos();
+    }, 'Grupo criado.');
+  };
+  const entrarNoGrupo = item => executar(async () => {
+    if (usuario.role === 'guest') throw new Error('Crie uma conta para participar de grupos.');
+    await requisicao(`/comunidade/grupos/${item.id}/entrar`, { method: 'POST', token });
+    await carregarGrupos();
+  }, 'Você entrou no grupo.');
+
+  return <div className="jornada-lista">
+    {['nutricionista', 'admin'].includes(usuario.role) && <form className="mini-form" onSubmit={criarGrupo}>
+      <h3>Criar grupo de suporte</h3>
+      <input required placeholder="Nome do grupo" value={grupo.nome} onChange={e => setGrupo({ ...grupo, nome: e.target.value })} />
+      <textarea required placeholder="Descrição" value={grupo.descricao} onChange={e => setGrupo({ ...grupo, descricao: e.target.value })} />
+      <button className="primario">Criar grupo</button>
+    </form>}
+    <h3>Grupos de suporte</h3>
+    {grupos.map(item => <article className="plano" key={item.id}>
+      <h3>{item.nome}</h3><p>{item.descricao}</p><small>{item.membros} participantes</small>
+      {usuario.role === 'guest' ? <p className="inicio-convite">Crie uma conta para participar deste grupo.</p> : <button onClick={() => entrarNoGrupo(item)}>Participar</button>}
+    </article>)}
+  </div>;
 }
 
 function ContaJornada({ token, usuario, executar }) {

@@ -18,6 +18,10 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
 
   useEffect(() => {
     let ativo = true;
+    if (usuario?.role === 'guest') {
+      setCarregando(false);
+      return () => { ativo = false; };
+    }
     const carregar = async () => {
       try {
         const [peso, consumo, medalhas, feed, posts, conversas] = await Promise.allSettled([
@@ -30,12 +34,16 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
         ]);
         const [compras, exercicios] = await Promise.allSettled([
           requisicao('/usuarios/plano-atual', { token }).then(plano => plano.id ? requisicao(`/usuarios/lista-compras?plano_id=${plano.id}`, { token }) : { itens: [] }).catch(() => ({ itens: [] })),
-          requisicao('/exercicios?page=1&limit=50', { token }).then(resposta => Promise.all((resposta.itens || []).slice(0, 12).map(item => requisicao(`/exercicios/historico/${item.id}`, { token })))).catch(() => []),
+          requisicao('/exercicios?page=1&limit=50', { token }).then(resposta => Promise.all((resposta.itens || []).slice(0, 12).map(item => requisicao(`/usuarios/exercicios/historico/${item.id}`, { token })))),
         ]);
         const historicoExercicios = exercicios.status === 'fulfilled'
-          ? exercicios.value.flat().filter(Boolean).map(item => ({ ...item, exercicio: item.exercicio || item.nome || 'Exercício' }))
+          ? exercicios.value.flatMap(item => (item.sessoes || []).map(sessao => ({ ...sessao, exercicio: item.exercicio || 'Exercício' })))
           : [];
         if (!ativo) return;
+        const falhas = [
+          ['peso', peso], ['consumo', consumo], ['medalhas', medalhas], ['feed', feed],
+          ['publicações', posts], ['conversas', conversas], ['compras', compras], ['sessões de exercício', exercicios],
+        ].filter(([, resultado]) => resultado.status === 'rejected').map(([nome]) => nome);
         setDados({
           peso: peso.status === 'fulfilled' ? peso.value || [] : [],
           consumo: consumo.status === 'fulfilled' ? consumo.value?.dias || [] : [],
@@ -46,6 +54,7 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
           conversas: conversas.status === 'fulfilled' ? conversas.value || [] : [],
           exercicios: historicoExercicios,
         });
+        setErro(falhas.length ? `Não foi possível carregar: ${falhas.join(', ')}.` : '');
       } catch (error) {
         if (ativo) setErro(error.message);
       } finally {
@@ -54,7 +63,17 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
     };
     carregar();
     return () => { ativo = false; };
-  }, [token]);
+  }, [token, usuario?.role]);
+
+  if (usuario?.role === 'guest') {
+    return <main className="relatorio-impressao">
+      <div className="relatorio-toolbar">
+        <div><p className="eyebrow">histórico pessoal</p><h1>Minha jornada Aptus</h1></div>
+        <button className="secundario" onClick={voltar}>Voltar ao aplicativo</button>
+      </div>
+      <p className="vazio">Crie uma conta para acompanhar e imprimir seu histórico pessoal.</p>
+    </main>;
+  }
 
   const avatar = usuario?.foto_perfil_url ? <img className="relatorio-avatar" src={urlDaApi(usuario.foto_perfil_url)} alt="Foto de perfil" /> : <div className="relatorio-avatar relatorio-avatar-vazia">{(usuario?.nome_completo || 'A').slice(0, 1)}</div>;
   const printReport = () => window.print();
@@ -89,7 +108,7 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
 
         <Secao titulo="Evolução e histórico" subtitulo="Registros de peso e consumo" cor="#34795f">
           <div className="relatorio-tabela-wrap"><table className="relatorio-tabela"><thead><tr><th>Data</th><th>Registro</th><th>Observação</th></tr></thead><tbody>
-            {dados.peso.length ? dados.peso.slice().reverse().map(item => <tr key={`${item.data_registro}-${item.peso}`}><td>{new Date(item.data_registro).toLocaleDateString('pt-BR')}</td><td><strong>{item.peso} kg</strong></td><td>{item.notas || 'Evolução registrada'}</td></tr>) : <tr><td colSpan="3">Nenhum registro de peso encontrado.</td></tr>}
+            {dados.peso.length ? dados.peso.slice().reverse().map(item => <tr key={`${item.data_registro}-${item.peso}`}><td>{new Date(item.data_registro).toLocaleDateString('pt-BR')}</td><td><strong>{item.peso} kg</strong></td><td>{item.anotacao || item.notas || 'Evolução registrada'}</td></tr>) : <tr><td colSpan="3">Nenhum registro de peso encontrado.</td></tr>}
           </tbody></table></div>
           <div className="relatorio-resumo-grid"><div><span> Dias registrados</span><strong>{dados.consumo.length}</strong></div><div><span>Calorias totais</span><strong>{dados.consumo.reduce((soma, dia) => soma + Number(dia.calorias || 0), 0).toLocaleString('pt-BR')} kcal</strong></div><div><span>Refeições consumidas</span><strong>{dados.consumo.reduce((soma, dia) => soma + Number(dia.consumidas || 0), 0)}</strong></div></div>
         </Secao>
@@ -102,10 +121,7 @@ export default function HistoricoImpressao({ usuario, token, voltar }) {
         </Secao>
 
         <Secao titulo="Exercícios e sessões" subtitulo="Passos, músculos e histórico de execução" cor="#5c6aa8">
-          <div className="relatorio-grid-duas">
-            <div><h3>Exercícios disponíveis</h3>{dados.exercicios.length ? dados.exercicios.map(item => <article className="relatorio-item" key={item.exercicio}><strong>{item.exercicio || 'Exercício'}</strong><span>{item.total_sessoes || 0} sessões · {item.series_completadas || 0} séries · {item.completado ? 'concluído' : 'em andamento'}</span></article>) : <p className="relatorio-vazio">Nenhuma sessão registrada.</p>}</div>
-            <div><h3>Ações de treino</h3>{dados.exercicios.length ? dados.exercicios.map(item => <article className="relatorio-item" key={`acao-${item.exercicio}`}><strong>Executar passo a passo</strong><span>Aquecer, posicionar, executar, descansar e repetir com segurança.</span></article>) : <p className="relatorio-vazio">Ações de treino ainda não foram registradas.</p>}</div>
-          </div>
+          <div><h3>Sessões registradas</h3>{dados.exercicios.length ? dados.exercicios.map((item, index) => <article className="relatorio-item" key={item.sessao_id || `${item.exercicio}-${item.data_execucao}-${index}`}><strong>{item.exercicio}</strong><span>{item.data_execucao ? new Date(item.data_execucao).toLocaleDateString('pt-BR') : 'Data não informada'} · {item.series_completadas || 0} séries · {item.completado ? 'concluído' : 'incompleto'}</span></article>) : <p className="relatorio-vazio">Nenhuma sessão registrada.</p>}</div>
         </Secao>
 
         <Secao titulo="Conteúdo e ações da comunidade" subtitulo="Publicações, curtidas, salvamentos e conversas" cor="#277a89">
