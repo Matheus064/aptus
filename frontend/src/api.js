@@ -80,6 +80,10 @@ export async function requisicao(caminho, opcoes = {}) {
       if (metodo === 'GET' && ehRotaDeDemo(caminho)) return respostaDemo(caminho, metodo);
       throw new Error(dados?.mensagem || dados?.erro || 'Não foi possível concluir a operação.');
     }
+    if (metodo === 'GET' && ehRotaDeDemo(caminho) && Array.isArray(dados?.itens) && dados.itens.length === 0) {
+      const demo = respostaDemo(caminho, metodo);
+      if (Array.isArray(demo?.itens) && demo.itens.length > 0) return demo;
+    }
     return dados;
   } catch (erro) {
     if (metodo === 'GET' && ehRotaDeDemo(caminho)) return respostaDemo(caminho, metodo);
