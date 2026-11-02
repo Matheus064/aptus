@@ -15,6 +15,7 @@ import './demo.css';
 import './compatibilidade.css';
 import './fluxo-guidado.css';
 import './historico-impressao.css';
+import './inicio.css';
 
 const abas = [
   ['feed', '⌂', 'Início'], ['descobrir', '⌕', 'Descobrir'], ['planos', '◫', 'Planos'], ['jornada', '✦', 'Jornada'],
@@ -97,7 +98,36 @@ function Feed({ token, convidado, usuario, navegar }) {
     } catch (error) { setErro(error.message); }
   };
 
-  return <section className="pagina"><div className="titulo"><div><p className="eyebrow">para você</p><h2>Inspiração para hoje</h2></div><button className="primario" onClick={() => navegar('descobrir')}>Explorar conteúdo</button></div><Aviso erro={erro} sucesso={sucesso} />{!convidado && <form className="mini-form" onSubmit={publicar}><label htmlFor="nova-publicacao">Compartilhe uma conquista ou incentivo</label><textarea id="nova-publicacao" value={texto} onChange={e => setTexto(e.target.value)} maxLength="500" placeholder="Cada pequeno passo conta…" required /><button className="primario">Publicar</button></form>}<h3>Comunidade</h3>{posts.length ? posts.map(post => <article className="cartao-interativo" key={`post-${post.id}`}><p className="eyebrow">{post.autor_nome} · {post.tipo}</p><p>{post.conteudo}</p><div className="acoes-card"><button onClick={() => curtir(post)}>{post.curtido_por_usuario ? '♥ Curtido' : '♡ Curtir'} · {post.curtidas}</button><span>{post.comentarios} comentários</span></div>{convidado ? <p className="vazio">Crie uma conta para participar da conversa.</p> : <form className="linha-form" onSubmit={e => comentar(e, post)}><input aria-label="Escreva um comentário" placeholder="Escreva um comentário…" value={comentarios[post.id] || ''} onChange={e => setComentarios(atual => ({ ...atual, [post.id]: e.target.value }))} required /><button className="primario">Enviar</button></form>}</article>) : <p className="vazio">Ainda não há publicações. Seja a primeira pessoa a compartilhar.</p>}<h3>Receitas e exercícios recentes</h3><div className="cartoes-grade">{conteudos.map(item => <article className="cartao-interativo" key={`${item.tipo}-${item.id}`}><span className="chip">{item.tipo}</span><h3>{item.titulo || item.nome}</h3><p>{item.descricao}</p><small>{item.criado_por?.nome || 'Comunidade'} · {item.curtidas || 0} curtidas</small><div className="acoes-card"><button onClick={() => acaoConteudo(item, 'curtir')}>{item.curtido_por_usuario ? '♥ Curtido' : '♡ Curtir'}</button><button onClick={() => acaoConteudo(item, 'salvar')}>{item.salvo_por_usuario ? 'Salvo ✓' : '☆ Salvar'}</button>{item.tipo === 'receita' && <button onClick={() => navegar('planos')}>Ver detalhes</button>}</div></article>)}</div>{!conteudos.length && <p className="vazio">Ainda não há conteúdo; descubra receitas e exercícios.</p>}</section>;
+  const primeiroNome = usuario?.nome_completo?.trim().split(/\s+/)[0];
+  const dataHoje = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+
+  return <section className="pagina inicio-pagina">
+    <section className="inicio-boas-vindas" aria-labelledby="inicio-titulo">
+      <div className="inicio-boas-vindas-conteudo">
+        <p className="eyebrow">seu espaço de bem-estar</p>
+        <p className="inicio-data">{dataHoje}</p>
+        <h1 id="inicio-titulo">{primeiroNome ? `Olá, ${primeiroNome}!` : 'Que bom ter você por aqui!'}</h1>
+        <p className="inicio-descricao">Cuidar de você não precisa ser complicado. Escolha um pequeno passo e siga no seu ritmo.</p>
+        <div className="inicio-atalhos">
+          <button className="primario" onClick={() => navegar('descobrir')}>Explorar conteúdo <span aria-hidden="true">→</span></button>
+          <button className="inicio-secundario" onClick={() => navegar('planos')}>Organizar minha semana</button>
+        </div>
+        <p className="inicio-lembrete">Sem pressa, sem cobranças. Cada passo conta.</p>
+      </div>
+      <div className="inicio-selo" aria-hidden="true"><span>✦</span><strong>Um dia de cada vez</strong><small>seu caminho, seu ritmo</small></div>
+    </section>
+    <Aviso erro={erro} sucesso={sucesso} />
+    {!convidado && <form className="mini-form inicio-publicar" onSubmit={publicar}><div><p className="eyebrow">um espaço seguro</p><h2>O que você gostaria de compartilhar?</h2><p>Uma conquista, uma ideia ou uma palavra de incentivo pode inspirar alguém.</p></div><label htmlFor="nova-publicacao">Sua mensagem</label><textarea id="nova-publicacao" value={texto} onChange={e => setTexto(e.target.value)} maxLength="500" placeholder="Cada pequeno passo conta…" required /><button className="primario">Compartilhar com a comunidade</button></form>}
+    <section className="inicio-secao" aria-labelledby="inicio-comunidade">
+      <div className="inicio-section-heading"><div><p className="eyebrow">juntos, fica mais leve</p><h2 id="inicio-comunidade">Vozes da comunidade</h2></div><span>Incentivo sem julgamentos</span></div>
+      {posts.length ? posts.map(post => <article className="cartao-interativo inicio-post" key={`post-${post.id}`}><p className="eyebrow">{post.autor_nome} · {post.tipo}</p><p>{post.conteudo}</p><div className="acoes-card"><button onClick={() => curtir(post)}>{post.curtido_por_usuario ? '♥ Curtido' : '♡ Curtir'} · {post.curtidas}</button><span>{post.comentarios} comentários</span></div>{convidado ? <p className="inicio-convite">Crie uma conta para participar da conversa e compartilhar suas conquistas.</p> : <form className="linha-form" onSubmit={e => comentar(e, post)}><input aria-label="Escreva um comentário" placeholder="Escreva um comentário…" value={comentarios[post.id] || ''} onChange={e => setComentarios(atual => ({ ...atual, [post.id]: e.target.value }))} required /><button className="primario">Enviar</button></form>}</article>) : <div className="inicio-vazio"><span aria-hidden="true">♡</span><h3>Sua comunidade começa com uma conversa</h3><p>Compartilhe um pensamento ou explore conteúdos para encontrar inspiração.</p><button className="inicio-secundario" onClick={() => navegar('descobrir')}>Encontrar inspiração</button></div>}
+    </section>
+    <section className="inicio-secao" aria-labelledby="inicio-conteudos">
+      <div className="inicio-section-heading"><div><p className="eyebrow">ideias para o seu dia</p><h2 id="inicio-conteudos">Conteúdos para descobrir</h2></div><button className="inicio-link" onClick={() => navegar('descobrir')}>Ver tudo <span aria-hidden="true">→</span></button></div>
+      <div className="cartoes-grade">{conteudos.map(item => <article className="cartao-interativo inicio-conteudo" key={`${item.tipo}-${item.id}`}><span className="chip">{item.tipo}</span><h3>{item.titulo || item.nome}</h3><p>{item.descricao}</p><small>{item.criado_por?.nome || 'Comunidade'} · {item.curtidas || 0} curtidas</small><div className="acoes-card"><button onClick={() => acaoConteudo(item, 'curtir')}>{item.curtido_por_usuario ? '♥ Curtido' : '♡ Curtir'}</button><button onClick={() => acaoConteudo(item, 'salvar')}>{item.salvo_por_usuario ? 'Salvo ✓' : '☆ Salvar'}</button>{item.tipo === 'receita' && <button onClick={() => navegar('planos')}>Ver detalhes</button>}</div></article>)}</div>
+      {!conteudos.length && <div className="inicio-vazio"><span aria-hidden="true">✦</span><h3>Novas ideias estão a caminho</h3><p>Explore receitas e conteúdos pensados para apoiar sua rotina.</p><button className="inicio-secundario" onClick={() => navegar('descobrir')}>Explorar agora</button></div>}
+    </section>
+  </section>;
 }
 
 function Descobrir({ navegar }) {
